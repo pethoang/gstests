@@ -13,7 +13,6 @@ interface ClassData {
   teacherId: string;
   studentEmails: string[];
   createdAt: string;
-  classCode?: string;
 }
 
 export default function ClassesTab() {
@@ -59,10 +58,6 @@ export default function ClassesTab() {
     return str.split(/[\n,;]+/).map(e => e.trim().toLowerCase()).filter(e => e && e.includes('@'));
   };
 
-  const generateCode = () => {
-    return Math.random().toString(36).substring(2, 8).toUpperCase();
-  };
-
   const handleCreate = async () => {
     if (!auth.currentUser || !newClassName.trim()) return;
     const emails = parseEmails(newEmailsStr);
@@ -71,7 +66,6 @@ export default function ClassesTab() {
         name: newClassName.trim(),
         teacherId: auth.currentUser.uid,
         studentEmails: emails,
-        classCode: generateCode(),
         createdAt: new Date().toISOString()
       });
       setNewClassName('');
@@ -105,14 +99,10 @@ export default function ClassesTab() {
     if (!editingId || !editName.trim()) return;
     const emails = parseEmails(editEmailsStr);
     try {
-      const clsToEdit = classes.find(c => c.id === editingId);
       const updates: any = {
         name: editName.trim(),
         studentEmails: emails
       };
-      if (clsToEdit && !clsToEdit.classCode) {
-        updates.classCode = generateCode();
-      }
 
       await updateDoc(doc(db, 'classes', editingId), updates);
       setEditingId(null);
@@ -232,25 +222,8 @@ export default function ClassesTab() {
                   <CardHeader className="bg-slate-50 pb-4 border-b border-slate-100">
                     <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle className="text-lg flex items-center gap-2">
+                        <CardTitle className="text-lg">
                           {cls.name}
-                          {cls.classCode && (
-                            <div className="flex items-center gap-1 bg-indigo-100 text-indigo-700 font-mono px-2 py-0.5 rounded border border-indigo-200">
-                              <span className="text-xs">Mã: {cls.classCode}</span>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-4 w-4 p-0 hover:bg-transparent" 
-                                onClick={() => {
-                                  navigator.clipboard.writeText(cls.classCode!);
-                                  alert('Đã copy mã lớp!');
-                                }}
-                                title="Copy mã lớp"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                              </Button>
-                            </div>
-                          )}
                         </CardTitle>
                         <CardDescription>{new Date(cls.createdAt).toLocaleDateString('vi-VN')}</CardDescription>
                       </div>

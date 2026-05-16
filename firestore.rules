@@ -42,12 +42,11 @@ service cloud.firestore {
 
     function isValidClass(data) {
       return data.keys().hasAll(['name', 'teacherId', 'studentEmails', 'createdAt']) &&
-             data.keys().size() >= 4 &&
+             data.keys().size() == 4 &&
              data.name is string && data.name.size() <= 100 &&
              data.teacherId is string && data.teacherId.size() <= 128 &&
              data.studentEmails is list && data.studentEmails.size() <= 2000 &&
-             data.createdAt is string && data.createdAt.size() <= 100 &&
-             (!('classCode' in data) || data.classCode is string);
+             data.createdAt is string && data.createdAt.size() <= 100;
     }
 
     function isValidExam(data) {
@@ -110,13 +109,10 @@ service cloud.firestore {
     }
 
     match /classes/{classId} {
-      allow get: if isValidId(classId); 
+      allow get: if isValidId(classId) && isSignedIn() && (resource.data.teacherId == request.auth.uid || request.auth.token.email in resource.data.studentEmails);
       allow list: if isSignedIn();
       allow create: if isValidId(classId) && isSignedIn() && isValidClass(incoming()) && incoming().teacherId == request.auth.uid;
-      allow update: if isValidId(classId) && isSignedIn() && (
-        (existing().teacherId == request.auth.uid && isValidClass(incoming()) && incoming().teacherId == existing().teacherId && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'studentEmails', 'classCode'])) ||
-        (isValidClass(incoming()) && incoming().teacherId == existing().teacherId && incoming().diff(existing()).affectedKeys().hasOnly(['studentEmails']))
-      );
+      allow update: if isValidId(classId) && isSignedIn() && resource.data.teacherId == request.auth.uid && isValidClass(incoming()) && incoming().teacherId == existing().teacherId && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'studentEmails']);
       allow delete: if isValidId(classId) && isSignedIn() && resource.data.teacherId == request.auth.uid;
     }
 
