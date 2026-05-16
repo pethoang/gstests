@@ -21,6 +21,8 @@ export default function ViolationsTab() {
   const [violations, setViolations] = useState<Violation[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchViolations = async () => {
     const user = auth.currentUser;
@@ -80,6 +82,40 @@ export default function ViolationsTab() {
     }
   };
 
+  const toggleSelectAll = () => {
+    if (selectedIds.size === violations.length && violations.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(violations.map(v => v.id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`Bạn có chắc muốn xóa ${selectedIds.size} vi phạm đã chọn?`)) return;
+    setIsDeleting(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => deleteDoc(doc(db, 'violations', id))));
+      setSelectedIds(new Set());
+      fetchViolations();
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, 'violations');
+      alert("Lỗi khi xoá hàng loạt vi phạm.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'tab_switch':
@@ -112,12 +148,25 @@ export default function ViolationsTab() {
 
   return (
     <Card className="border-0 shadow-sm bg-white overflow-hidden max-w-7xl mx-auto">
-      <CardHeader className="bg-red-50 border-b border-red-100 pb-6 hidden md:block">
-        <CardTitle className="text-xl font-bold text-red-700 flex items-center gap-2">
-          <ShieldAlert className="w-6 h-6" />
-          Nhật ký vi phạm
-        </CardTitle>
-        <p className="text-sm text-red-600/80">Theo dõi các hành vi có dấu hiệu gian lận của học sinh trong quá trình diễn ra bài kiểm tra.</p>
+      <CardHeader className="bg-red-50 border-b border-red-100 pb-6 hidden md:flex flex-row justify-between items-start pt-6">
+        <div>
+          <CardTitle className="text-xl font-bold text-red-700 flex items-center gap-2 mb-2">
+            <ShieldAlert className="w-6 h-6" />
+            Nhật ký vi phạm
+          </CardTitle>
+          <p className="text-sm text-red-600/80 mt-1">Theo dõi các hành vi có dấu hiệu gian lận của học sinh trong quá trình diễn ra bài kiểm tra.</p>
+        </div>
+        {selectedIds.size > 0 && (
+          <Button 
+            variant="destructive" 
+            onClick={handleBulkDelete}
+            disabled={isDeleting}
+            className="shrink-0"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            {isDeleting ? "Đang xóa..." : `Xóa ${selectedIds.size} mục đã chọn`}
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="p-0">
         {violations.length === 0 ? (
@@ -130,6 +179,14 @@ export default function ViolationsTab() {
             <table className="w-full relative text-sm text-left">
               <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
                 <tr>
+                  <th className="px-4 py-3 text-left w-12/12 w-10">
+                    <input 
+                      type="checkbox" 
+                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      checked={selectedIds.size === violations.length && violations.length > 0}
+                      onChange={toggleSelectAll}
+                    />
+                  </th>
                   <th className="font-semibold px-6 py-3">Thời gian</th>
                   <th className="font-semibold py-3 px-2">Học sinh</th>
                   <th className="font-semibold py-3 px-2">Bài kiểm tra</th>
@@ -140,7 +197,15 @@ export default function ViolationsTab() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {violations.map((violation) => (
-                  <tr key={violation.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={violation.id} className={`hover:bg-slate-50 transition-colors ${selectedIds.has(violation.id) ? 'bg-blue-50/50' : ''}`}>
+                    <td className="px-4 py-4 w-10">
+                      <input 
+                        type="checkbox" 
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        checked={selectedIds.has(violation.id)}
+                        onChange={() => toggleSelect(violation.id)}
+                      />
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-slate-600">
                       {new Date(violation.timestamp).toLocaleString('vi-VN')}
                     </td>
