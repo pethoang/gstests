@@ -1,0 +1,102 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user profile (teacher or student)",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "enum": ["teacher", "student"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["displayName", "email", "role", "createdAt"]
+    },
+    "Class": {
+      "title": "Class",
+      "description": "A class created by a teacher containing students",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "studentEmails": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["name", "teacherId", "studentEmails", "createdAt"]
+    },
+    "Exam": {
+      "title": "Exam",
+      "description": "An english testing exam created by a teacher",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "timeLimit": { "type": "number" },
+        "allowRetake": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "ownerId": { "type": "string", "description": "Teacher UID" },
+        "questions": { "type": "array" },
+        "grade": { "enum": ["6", "7", "8", "9"] },
+        "examType": { "enum": ["GK1", "CK1", "GK2", "CK2", "Unit"] },
+        "classIds": { "type": "array", "items": { "type": "string" } },
+        "allowedEmails": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["title", "timeLimit", "createdAt", "ownerId", "questions"]
+    },
+    "Submission": {
+      "title": "Submission",
+      "description": "A student's submission for an exam",
+      "type": "object",
+      "properties": {
+        "examId": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentEmail": { "type": "string" },
+        "studentName": { "type": "string" },
+        "answers": { "type": "object" },
+        "score": { "type": "number" },
+        "maxScore": { "type": "number" },
+        "submittedAt": { "type": "string" }
+      },
+      "required": ["examId", "teacherId", "studentId", "studentEmail", "studentName", "answers", "score", "maxScore", "submittedAt"]
+    },
+    "Violation": {
+      "title": "Violation",
+      "description": "A cheating violation record logged during an exam",
+      "type": "object",
+      "properties": {
+        "examId": { "type": "string" },
+        "examTitle": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "studentEmail": { "type": "string" },
+        "type": { "enum": ["tab_switch", "copy_paste", "leave_fullscreen"] },
+        "timestamp": { "type": "string" },
+        "details": { "type": "string" }
+      },
+      "required": ["examId", "examTitle", "teacherId", "studentId", "studentName", "studentEmail", "type", "timestamp", "details"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profiles and roles."
+    },
+    "/classes/{classId}": {
+      "schema": { "$ref": "#/entities/Class" },
+      "description": "Stores teacher classes and student emails."
+    },
+    "/exams/{examId}": {
+      "schema": { "$ref": "#/entities/Exam" },
+      "description": "Stores all exams. Publicly readable for students fetching an exam link. Listable only by owner (teacher)."
+    },
+    "/submissions/{submissionId}": {
+      "schema": { "$ref": "#/entities/Submission" },
+      "description": "Stores student submissions. Creatable by authenticated students. Listable only by owner (teacher)."
+    },
+    "/violations/{violationId}": {
+      "schema": { "$ref": "#/entities/Violation" },
+      "description": "Stores cheating logs. Students can create, teachers can read."
+    }
+  }
+}

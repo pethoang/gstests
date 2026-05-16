@@ -1,0 +1,175 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitive Helpers
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    
+    function incoming() {
+      return request.resource.data;
+    }
+    
+    function existing() {
+      return resource.data;
+    }
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      // For Google Auth, email_verified is usually true.
+      return request.auth.token.email_verified == true;
+    }
+
+    // Entity Checkers
+    function isValidUser(data) {
+      return data.keys().hasAll(['displayName', 'email', 'role', 'createdAt']) &&
+             data.keys().size() == 4 &&
+             data.displayName is string && data.displayName.size() <= 100 &&
+             data.email is string && data.email.size() <= 100 &&
+             data.role in ['teacher', 'student'] &&
+             data.createdAt is string && data.createdAt.size() <= 100;
+    }
+
+    function isValidClass(data) {
+      return data.keys().hasAll(['name', 'teacherId', 'studentEmails', 'createdAt']) &&
+             data.keys().size() == 4 &&
+             data.name is string && data.name.size() <= 100 &&
+             data.teacherId is string && data.teacherId.size() <= 128 &&
+             data.studentEmails is list && data.studentEmails.size() <= 2000 &&
+             data.createdAt is string && data.createdAt.size() <= 100;
+    }
+
+    function isValidExam(data) {
+      return data.keys().hasAll(['title', 'timeLimit', 'createdAt', 'ownerId', 'questions']) &&
+             data.keys().size() >= 5 && data.keys().size() <= 13 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.timeLimit is number &&
+             data.createdAt is string && data.createdAt.size() <= 100 &&
+             data.ownerId is string && data.ownerId.size() <= 128 &&
+             data.questions is list && data.questions.size() <= 200 &&
+             (!('allowRetake' in data) || data.allowRetake is bool) &&
+             (!('assignedClassIds' in data) || (data.assignedClassIds is list && data.assignedClassIds.size() <= 50)) &&
+             (!('allowedEmails' in data) || (data.allowedEmails is list && data.allowedEmails.size() <= 2000)) &&
+             (!('startTime' in data) || (data.startTime == null || (data.startTime is string && data.startTime.size() <= 100))) &&
+             (!('endTime' in data) || (data.endTime == null || (data.endTime is string && data.endTime.size() <= 100))) &&
+             (!('grade' in data) || (data.grade in ['6', '7', '8', '9'])) &&
+             (!('examType' in data) || (data.examType in ['GK1', 'CK1', 'GK2', 'CK2', 'Unit']));
+    }
+
+    function isValidSubmission(data) {
+      return data.keys().hasAll(['examId', 'teacherId', 'studentId', 'studentEmail', 'studentName', 'answers', 'score', 'maxScore', 'submittedAt']) &&
+             data.keys().size() == 9 &&
+             data.examId is string && data.examId.size() <= 128 &&
+             data.teacherId is string && data.teacherId.size() <= 128 &&
+             data.studentId is string && data.studentId.size() <= 128 &&
+             data.studentEmail is string && data.studentEmail.size() <= 100 &&
+             data.studentName is string && data.studentName.size() <= 100 &&
+             data.answers is map &&
+             data.score is number &&
+             data.maxScore is number &&
+             data.submittedAt is string && data.submittedAt.size() <= 100;
+    }
+
+    function isValidViolation(data) {
+      return data.keys().hasAll(['examId', 'examTitle', 'teacherId', 'studentId', 'studentName', 'studentEmail', 'type', 'timestamp', 'details']) &&
+             data.keys().size() == 9 &&
+             data.examId is string && data.examId.size() <= 128 &&
+             data.examTitle is string && data.examTitle.size() <= 200 &&
+             data.teacherId is string && data.teacherId.size() <= 128 &&
+             data.studentId is string && data.studentId.size() <= 128 &&
+             data.studentName is string && data.studentName.size() <= 100 &&
+             data.studentEmail is string && data.studentEmail.size() <= 100 &&
+             data.type in ['tab_switch', 'copy_paste', 'leave_fullscreen'] &&
+             data.timestamp is string && data.timestamp.size() <= 100 &&
+             data.details is string && data.details.size() <= 500;
+    }
+
+    // Collections
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isSignedIn() && request.auth.uid == userId);
+      // Let teachers read user info for their students? Later.
+      allow create: if isValidId(userId) &&
+                       isSignedIn() && request.auth.uid == userId &&
+                       isValidUser(incoming());
+      allow update: if isValidId(userId) && 
+                       isSignedIn() && request.auth.uid == userId &&
+                       isValidUser(incoming()) &&
+                       (incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'role']) || 
+                        (!('role' in existing()) && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'email', 'role', 'createdAt'])));
+    }
+
+    match /classes/{classId} {
+      allow get: if isValidId(classId) && isSignedIn() && (resource.data.teacherId == request.auth.uid || request.auth.token.email in resource.data.studentEmails);
+      allow list: if isSignedIn();
+      allow create: if isValidId(classId) && isSignedIn() && isValidClass(incoming()) && incoming().teacherId == request.auth.uid;
+      allow update: if isValidId(classId) && isSignedIn() && resource.data.teacherId == request.auth.uid && isValidClass(incoming()) && incoming().teacherId == existing().teacherId && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'studentEmails']);
+      allow delete: if isValidId(classId) && isSignedIn() && resource.data.teacherId == request.auth.uid;
+    }
+
+    match /exams/{examId} {
+      allow get: if isValidId(examId); // public for student to view
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || ('allowedEmails' in resource.data && request.auth.token.email in resource.data.allowedEmails));
+      
+      allow create: if isValidId(examId) &&
+                       isSignedIn() && isVerified() && 
+                       isValidExam(incoming()) && 
+                       incoming().ownerId == request.auth.uid;
+                       
+      // Actions: Edit Exam questions and limits
+      allow update: if isValidId(examId) &&
+                       isSignedIn() && isVerified() &&
+                       existing().ownerId == request.auth.uid &&
+                       isValidExam(incoming()) &&
+                       incoming().ownerId == existing().ownerId &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['title', 'timeLimit', 'allowRetake', 'questions', 'assignedClassIds', 'allowedEmails', 'classIds', 'startTime', 'endTime', 'grade', 'examType']);
+                       
+      allow delete: if isValidId(examId) &&
+                       isSignedIn() && 
+                       existing().ownerId == request.auth.uid;
+    }
+
+    match /submissions/{submissionId} {
+      allow get: if isValidId(submissionId) && isSignedIn() && (existing().teacherId == request.auth.uid || existing().studentId == request.auth.uid);
+      allow list: if isSignedIn() && (resource.data.teacherId == request.auth.uid || resource.data.studentId == request.auth.uid);
+      
+      allow create: if isValidId(submissionId) &&
+                       isSignedIn() && 
+                       isValidSubmission(incoming()) &&
+                       incoming().studentId == request.auth.uid &&
+                       exists(/databases/$(database)/documents/exams/$(incoming().examId)) &&
+                       get(/databases/$(database)/documents/exams/$(incoming().examId)).data.ownerId == incoming().teacherId;
+                       
+      allow update: if false; 
+      allow delete: if false; 
+    }
+
+    match /violations/{violationId} {
+      allow get: if isValidId(violationId) && isSignedIn() && (existing().teacherId == request.auth.uid || existing().studentId == request.auth.uid);
+      allow list: if isSignedIn() && (resource.data.teacherId == request.auth.uid || resource.data.studentId == request.auth.uid);
+      allow create: if isValidId(violationId) &&
+                       isSignedIn() && 
+                       isValidViolation(incoming()) &&
+                       incoming().studentId == request.auth.uid &&
+                       exists(/databases/$(database)/documents/exams/$(incoming().examId)) &&
+                       get(/databases/$(database)/documents/exams/$(incoming().examId)).data.ownerId == incoming().teacherId;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    match /leaderboards/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && incoming().studentId == request.auth.uid;
+      allow update: if isSignedIn() && existing().studentId == request.auth.uid;
+    }
+  }
+}
