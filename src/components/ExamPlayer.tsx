@@ -226,9 +226,9 @@ export default function ExamPlayer() {
           });
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      alert('Đăng nhập thất bại.');
+      alert(`Đăng nhập thất bại: ${error?.message || 'Lỗi không xác định'}`);
     }
   };
 

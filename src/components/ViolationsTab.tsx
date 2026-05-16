@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
-import { db, auth } from '../lib/firebase';
+import { collection, query, where, getDocs, orderBy, deleteDoc, doc } from 'firebase/firestore';
+import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert, Trash2 } from 'lucide-react';
+import { Button } from './ui/button';
 
 interface Violation {
   id: string;
@@ -19,35 +20,65 @@ interface Violation {
 export default function ViolationsTab() {
   const [violations, setViolations] = useState<Violation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  const fetchViolations = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+      const vQuery = query(
+        collection(db, 'violations'),
+        where('teacherId', '==', user.uid)
+      );
+      const snapshot = await getDocs(vQuery);
+      const fetchedViolations = snapshot.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      } as Violation));
+      
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const validViolations: Violation[] = [];
+
+      for (const v of fetchedViolations) {
+        if (new Date(v.timestamp) < thirtyDaysAgo) {
+          // Tự động xoá những vi phạm cũ hơn 30 ngày //
+          try {
+            await deleteDoc(doc(db, 'violations', v.id));
+          } catch (e) {
+            console.error("Failed to auto-delete old violation", e);
+          }
+        } else {
+          validViolations.push(v);
+        }
+      }
+      
+      // Sort explicitly on client
+      validViolations.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      setViolations(validViolations);
+    } catch (error) {
+      console.error("Error fetching violations:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchViolations = async () => {
-      const user = auth.currentUser;
-      if (!user) return;
-
-      try {
-        const vQuery = query(
-          collection(db, 'violations'),
-          where('teacherId', '==', user.uid)
-        );
-        const snapshot = await getDocs(vQuery);
-        const fetchedViolations = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as Violation));
-        
-        // Sort explicitly on client because we might need a composite index for orderBy('timestamp', 'desc')
-        fetchedViolations.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        setViolations(fetchedViolations);
-      } catch (error) {
-        console.error("Error fetching violations:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchViolations();
   }, []);
+
+  const handleDelete = async (id: string) => {
+    try {
+       await deleteDoc(doc(db, 'violations', id));
+       setDeleteConfirmId(null);
+       fetchViolations();
+    } catch (error) {
+       handleFirestoreError(error, OperationType.DELETE, 'violations');
+       alert("Lỗi khi xoá vi phạm.");
+    }
+  };
 
   const getTypeLabel = (type: string) => {
     switch (type) {
@@ -80,8 +111,8 @@ export default function ViolationsTab() {
   }
 
   return (
-    <Card className="border-0 shadow-sm bg-white overflow-hidden max-w-6xl mx-auto">
-      <CardHeader className="bg-red-50 border-b border-red-100 pb-6">
+    <Card className="border-0 shadow-sm bg-white overflow-hidden max-w-7xl mx-auto">
+      <CardHeader className="bg-red-50 border-b border-red-100 pb-6 hidden md:block">
         <CardTitle className="text-xl font-bold text-red-700 flex items-center gap-2">
           <ShieldAlert className="w-6 h-6" />
           Nhật ký vi phạm
@@ -104,6 +135,7 @@ export default function ViolationsTab() {
                   <th className="font-semibold py-3 px-2">Bài kiểm tra</th>
                   <th className="font-semibold py-3 px-2">Loại vi phạm</th>
                   <th className="font-semibold py-3 px-2">Chi tiết</th>
+                  <th className="font-semibold py-3 px-6 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -116,7 +148,7 @@ export default function ViolationsTab() {
                       <div className="font-medium text-slate-800">{violation.studentName}</div>
                       <div className="text-xs text-slate-500">{violation.studentEmail}</div>
                     </td>
-                    <td className="text-slate-700 py-4 px-2 font-medium max-w-[200px] truncate" title={violation.examTitle}>
+                    <td className="text-slate-700 py-4 px-2 font-medium max-w-[150px] truncate" title={violation.examTitle}>
                       {violation.examTitle}
                     </td>
                     <td className="py-4 px-2">
@@ -124,8 +156,21 @@ export default function ViolationsTab() {
                         {getTypeLabel(violation.type)}
                       </span>
                     </td>
-                    <td className="text-sm py-4 px-2 text-slate-600 max-w-[250px] truncate" title={violation.details}>
+                    <td className="text-sm py-4 px-2 text-slate-600 max-w-[200px] truncate" title={violation.details}>
                       {violation.details}
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                       {deleteConfirmId === violation.id ? (
+                          <div className="flex items-center justify-end gap-2 bg-red-50 p-1 rounded-md border border-red-100">
+                             <span className="text-xs text-red-600 font-medium px-1">Xóa?</span>
+                             <Button variant="ghost" size="sm" className="h-7 px-2 text-slate-500 hover:bg-slate-200" onClick={() => setDeleteConfirmId(null)}>Hủy</Button>
+                             <Button variant="destructive" size="sm" className="h-7 px-2" onClick={() => handleDelete(violation.id)}>Xóa</Button>
+                          </div>
+                        ) : (
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteConfirmId(violation.id)}>
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        )}
                     </td>
                   </tr>
                 ))}

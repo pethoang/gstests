@@ -143,9 +143,9 @@ export default function App() {
       // Force account selection to help users switch if needed
       provider.setCustomParameters({ prompt: 'select_account' });
       await signInWithPopup(auth, provider);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      alert('Đăng nhập thất bại.');
+      alert(`Đăng nhập thất bại: ${error?.message || 'Lỗi không xác định'}`);
     }
   };
 
