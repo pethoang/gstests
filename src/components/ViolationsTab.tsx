@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { collection, query, where, getDocs, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { ShieldAlert, Trash2 } from 'lucide-react';
+import { ShieldAlert, Trash2, Download } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface Violation {
@@ -116,6 +116,34 @@ export default function ViolationsTab() {
     }
   };
 
+  const exportToExcel = () => {
+    if (violations.length === 0) return;
+
+    const headers = ['Thời gian', 'Học sinh', 'Email', 'Bài kiểm tra', 'Loại vi phạm', 'Chi tiết'];
+    const csvRows = [headers.join(',')];
+
+    violations.forEach(v => {
+      const time = new Date(v.timestamp).toLocaleString('vi-VN');
+      const student = `"${v.studentName.replace(/"/g, '""')}"`;
+      const email = `"${v.studentEmail.replace(/"/g, '""')}"`;
+      const exam = `"${v.examTitle.replace(/"/g, '""')}"`;
+      const type = `"${getTypeLabel(v.type).replace(/"/g, '""')}"`;
+      const details = `"${v.details.replace(/"/g, '""')}"`;
+      
+      csvRows.push([time, student, email, exam, type, details].join(','));
+    });
+
+    const csvString = csvRows.join('\n');
+    const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `nhat_ky_vi_pham_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'tab_switch':
@@ -156,17 +184,26 @@ export default function ViolationsTab() {
           </CardTitle>
           <p className="text-sm text-red-600/80 mt-1">Theo dõi các hành vi có dấu hiệu gian lận của học sinh trong quá trình diễn ra bài kiểm tra.</p>
         </div>
-        {selectedIds.size > 0 && (
+        <div className="flex gap-2 shrink-0">
           <Button 
-            variant="destructive" 
-            onClick={handleBulkDelete}
-            disabled={isDeleting}
-            className="shrink-0"
+            variant="outline" 
+            onClick={exportToExcel}
+            disabled={violations.length === 0}
           >
-            <Trash2 className="w-4 h-4 mr-2" />
-            {isDeleting ? "Đang xóa..." : `Xóa ${selectedIds.size} mục đã chọn`}
+            <Download className="w-4 h-4 mr-2" />
+            Xuất Excel
           </Button>
-        )}
+          {selectedIds.size > 0 && (
+            <Button 
+              variant="destructive" 
+              onClick={handleBulkDelete}
+              disabled={isDeleting}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              {isDeleting ? "Đang xóa..." : `Xóa ${selectedIds.size} mục`}
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         {violations.length === 0 ? (
@@ -179,7 +216,7 @@ export default function ViolationsTab() {
             <table className="w-full relative text-sm text-left">
               <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
                 <tr>
-                  <th className="px-4 py-3 text-left w-12/12 w-10">
+                  <th className="px-4 py-3 text-left w-12">
                     <input 
                       type="checkbox" 
                       className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
@@ -198,7 +235,7 @@ export default function ViolationsTab() {
               <tbody className="divide-y divide-slate-100">
                 {violations.map((violation) => (
                   <tr key={violation.id} className={`hover:bg-slate-50 transition-colors ${selectedIds.has(violation.id) ? 'bg-blue-50/50' : ''}`}>
-                    <td className="px-4 py-4 w-10">
+                    <td className="px-4 py-4 w-12">
                       <input 
                         type="checkbox" 
                         className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"

@@ -18,9 +18,11 @@ export default function ExamPlayer() {
   const [allowRetake, setAllowRetake] = useState(false);
   const [teacherId, setTeacherId] = useState<string | null>(null);
   const [allowedEmails, setAllowedEmails] = useState<string[] | null>(null);
+  const [assignedClassIds, setAssignedClassIds] = useState<string[] | null>(null);
   const [startTime, setStartTime] = useState<string | null>(null);
   const [endTime, setEndTime] = useState<string | null>(null);
-  
+  const [isExamAccessible, setIsExamAccessible] = useState<boolean | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -99,6 +101,9 @@ export default function ExamPlayer() {
           if (data.allowedEmails && data.allowedEmails.length > 0) {
             setAllowedEmails(data.allowedEmails);
           }
+          if (data.assignedClassIds && data.assignedClassIds.length > 0) {
+            setAssignedClassIds(data.assignedClassIds);
+          }
         } else {
           setError('Không tìm thấy bài kiểm tra.');
         }
@@ -112,6 +117,44 @@ export default function ExamPlayer() {
     
     fetchExam();
   }, [examId]);
+
+  useEffect(() => {
+    const verifyAccess = async () => {
+      if (!user || (!allowedEmails && !assignedClassIds)) {
+        setIsExamAccessible(true); // Default allow, or let specific checks handle it later
+        return;
+      }
+      
+      const userEmail = user.email?.toLowerCase();
+      if (!userEmail) return;
+
+      let hasAccess = false;
+      
+      // Check static allowed emails
+      if (allowedEmails && allowedEmails.includes(userEmail)) {
+        hasAccess = true;
+      }
+
+      // If still no access, check if student is part of assigned classes
+      if (!hasAccess && assignedClassIds && assignedClassIds.length > 0) {
+        try {
+          const classQuery = query(collection(db, 'classes'), where('studentEmails', 'array-contains', userEmail));
+          const classSnap = await getDocs(classQuery);
+          const studentClassIds = classSnap.docs.map(doc => doc.id);
+          
+          if (assignedClassIds.some((id: string) => studentClassIds.includes(id))) {
+            hasAccess = true;
+          }
+        } catch (e) {
+          console.error("Error verifying class access", e);
+        }
+      }
+
+      setIsExamAccessible(hasAccess);
+    };
+
+    verifyAccess();
+  }, [user, allowedEmails, assignedClassIds]);
 
   useEffect(() => {
     let isActive = true;
@@ -400,14 +443,26 @@ export default function ExamPlayer() {
     );
   }
 
+  // Wait for access verification
+  if (isExamAccessible === null && (allowedEmails || assignedClassIds)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+          <p className="text-slate-500">Đang kiểm tra quyền truy cập...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Check if user is allowed to take the exam
-  if (allowedEmails && allowedEmails.length > 0 && user.email && !allowedEmails.includes(user.email.toLowerCase())) {
+  if (isExamAccessible === false) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
         <Card className="max-w-md w-full text-center p-6 space-y-6">
            <CardTitle className="text-2xl text-red-600">Không có quyền truy cập</CardTitle>
            <p className="text-slate-600">
-             Bài kiểm tra này chỉ dành riêng cho danh sách học sinh được giáo viên chỉ định. Tài khoản <strong>{user.email}</strong> không nằm trong danh sách được phép.
+             Bài kiểm tra này chỉ dành riêng cho danh sách lớp hoặc học sinh được giáo viên chỉ định. Tài khoản <strong>{user.email}</strong> không nằm trong danh sách được phép.
            </p>
            <Button variant="outline" onClick={() => auth.signOut()} className="w-full">
              Đăng xuất hoặc sử dụng tài khoản khác

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { User } from 'firebase/auth';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -51,18 +51,86 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'pending' | 'completed' | 'leaderboard'>('pending');
 
+  const [isJoining, setIsJoining] = useState(false);
+  const [joinCode, setJoinCode] = useState('');
+  const [joinError, setJoinError] = useState('');
+  const [joinSuccess, setJoinSuccess] = useState('');
+
+  const handleJoinClass = async () => {
+    if (!joinCode.trim()) return;
+    setIsJoining(true);
+    setJoinError('');
+    setJoinSuccess('');
+    try {
+      const q = query(collection(db, 'classes'), where('classCode', '==', joinCode.trim().toUpperCase()));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        setJoinError('Mã lớp không hợp lệ hoặc không tồn tại.');
+        setIsJoining(false);
+        return;
+      }
+      
+      const classDoc = snap.docs[0];
+      const classData = classDoc.data();
+      const currentEmails = classData.studentEmails || [];
+      const userEmail = user.email!.toLowerCase();
+
+      if (currentEmails.includes(userEmail)) {
+        setJoinError('Bạn đã ở trong lớp này rồi.');
+        setIsJoining(false);
+        return;
+      }
+
+      await updateDoc(doc(db, 'classes', classDoc.id), {
+        studentEmails: [...currentEmails, userEmail]
+      });
+
+      setJoinSuccess(`Tham gia lớp ${classData.name} thành công!`);
+      setJoinCode('');
+      
+      // Refresh exams (delay slightly to allow Firestore to update)
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+      console.error(error);
+      setJoinError('Có lỗi xảy ra khi tham gia lớp. Vui lòng thử lại.');
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       if (!user.email) return;
       setLoading(true);
       try {
-        // Query exams where this student's email is allowed
+        // 1. Find all classes the student belongs to
+        const classQuery = query(collection(db, 'classes'), where('studentEmails', 'array-contains', user.email.toLowerCase()));
+        const classSnap = await getDocs(classQuery);
+        const classIds = classSnap.docs.map(d => d.id);
+
+        const examDocsMap = new Map();
+
+        // 2. Query exams where explicitly allowed by email
         const examsQuery = query(
           collection(db, 'exams'), 
           where('allowedEmails', 'array-contains', user.email.toLowerCase())
         );
         const examsSnapshot = await getDocs(examsQuery);
-        const fetchedExams = await Promise.all(examsSnapshot.docs.map(async (examDoc) => {
+        examsSnapshot.docs.forEach(doc => examDocsMap.set(doc.id, doc));
+
+        // 3. Query exams assigned to the student's classes (chunking to respect Firestore limit of 30)
+        if (classIds.length > 0) {
+           for (let i = 0; i < classIds.length; i += 30) {
+              const chunk = classIds.slice(i, i + 30);
+              const classExamQuery = query(collection(db, 'exams'), where('assignedClassIds', 'array-contains-any', chunk));
+              const classExamSnap = await getDocs(classExamQuery);
+              classExamSnap.docs.forEach(doc => examDocsMap.set(doc.id, doc));
+           }
+        }
+
+        const fetchedExams = await Promise.all(Array.from(examDocsMap.values()).map(async (examDoc) => {
           const data = examDoc.data();
           let teacherName = 'Giáo viên';
           // Find teacher name
@@ -262,63 +330,80 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
         </div>
 
         {/* Custom Tabs Navigation */}
-        <div className="flex items-center gap-2 border-b border-slate-200">
-           <button
-             onClick={() => setActiveTab('pending')}
-             className={`pb-4 px-4 font-semibold text-sm transition-all relative ${
-               activeTab === 'pending' 
-                 ? 'text-[#0d9388]' 
-                 : 'text-slate-500 hover:text-slate-700'
-             }`}
-           >
-             <div className="flex items-center gap-2">
-               <FileText className="w-4 h-4" />
-               Việc cần làm
-               <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'pending' ? 'bg-[#0d9388] text-white' : 'bg-slate-100 text-slate-500'}`}>
-                 {availableExams.length}
-               </span>
-             </div>
-             {activeTab === 'pending' && (
-               <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#0d9388] rounded-t-full" />
-             )}
-           </button>
-           
-           <button
-             onClick={() => setActiveTab('completed')}
-             className={`pb-4 px-4 font-semibold text-sm transition-all relative ${
-               activeTab === 'completed' 
-                 ? 'text-[#0d9388]' 
-                 : 'text-slate-500 hover:text-slate-700'
-             }`}
-           >
-             <div className="flex items-center gap-2">
-               <CheckCircle className="w-4 h-4" />
-               Đã hoàn thành
-               <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'completed' ? 'bg-[#0d9388] text-white' : 'bg-slate-100 text-slate-500'}`}>
-                 {submissions.length}
-               </span>
-             </div>
-             {activeTab === 'completed' && (
-               <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#0d9388] rounded-t-full" />
-             )}
-           </button>
-           
-           <button
-             onClick={() => setActiveTab('leaderboard')}
-             className={`pb-4 px-4 font-semibold text-sm transition-all relative ${
-               activeTab === 'leaderboard' 
-                 ? 'text-[#0d9388]' 
-                 : 'text-slate-500 hover:text-slate-700'
-             }`}
-           >
-             <div className="flex items-center gap-2">
-               <Trophy className="w-4 h-4" />
-               Bảng xếp hạng
-             </div>
-             {activeTab === 'leaderboard' && (
-               <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#0d9388] rounded-t-full" />
-             )}
-           </button>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+             <button
+               onClick={() => setActiveTab('pending')}
+               className={`pb-4 px-4 font-semibold text-sm transition-all relative whitespace-nowrap ${
+                 activeTab === 'pending' 
+                   ? 'text-[#0d9388]' 
+                   : 'text-slate-500 hover:text-slate-700'
+               }`}
+             >
+               <div className="flex items-center gap-2">
+                 <FileText className="w-4 h-4" />
+                 Việc cần làm
+                 <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'pending' ? 'bg-[#0d9388] text-white' : 'bg-slate-100 text-slate-500'}`}>
+                   {availableExams.length}
+                 </span>
+               </div>
+               {activeTab === 'pending' && (
+                 <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#0d9388] rounded-t-full" />
+               )}
+             </button>
+             
+             <button
+               onClick={() => setActiveTab('completed')}
+               className={`pb-4 px-4 font-semibold text-sm transition-all relative whitespace-nowrap ${
+                 activeTab === 'completed' 
+                   ? 'text-[#0d9388]' 
+                   : 'text-slate-500 hover:text-slate-700'
+               }`}
+             >
+               <div className="flex items-center gap-2">
+                 <CheckCircle className="w-4 h-4" />
+                 Đã hoàn thành
+                 <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'completed' ? 'bg-[#0d9388] text-white' : 'bg-slate-100 text-slate-500'}`}>
+                   {submissions.length}
+                 </span>
+               </div>
+               {activeTab === 'completed' && (
+                 <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#0d9388] rounded-t-full" />
+               )}
+             </button>
+             
+             <button
+               onClick={() => setActiveTab('leaderboard')}
+               className={`pb-4 px-4 font-semibold text-sm transition-all relative whitespace-nowrap ${
+                 activeTab === 'leaderboard' 
+                   ? 'text-[#0d9388]' 
+                   : 'text-slate-500 hover:text-slate-700'
+               }`}
+             >
+               <div className="flex items-center gap-2">
+                 <Trophy className="w-4 h-4" />
+                 Bảng xếp hạng
+               </div>
+               {activeTab === 'leaderboard' && (
+                 <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#0d9388] rounded-t-full" />
+               )}
+             </button>
+          </div>
+          
+          <div className="flex items-center gap-2 pb-4 sm:pb-2">
+             {joinError && <span className="text-xs text-red-500 font-medium whitespace-nowrap">{joinError}</span>}
+             {joinSuccess && <span className="text-xs text-teal-600 font-medium whitespace-nowrap">{joinSuccess}</span>}
+             <input 
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value)}
+                placeholder="Nhập mã lớp"
+                className="px-3 py-1.5 text-sm border border-slate-300 rounded-md outline-none focus:border-teal-500 w-32 uppercase"
+                maxLength={10}
+             />
+             <Button size="sm" onClick={handleJoinClass} disabled={isJoining || !joinCode.trim()} className="bg-slate-800 hover:bg-slate-700 text-white border-0 h-8">
+               {isJoining ? 'Đang...' : 'Tham gia'}
+             </Button>
+          </div>
         </div>
 
         {/* Tab Contents */}
