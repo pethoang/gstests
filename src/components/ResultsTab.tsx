@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Search, Filter, Download, UserCircle, CheckCircle, XCircle, Loader2, ArrowLeft } from 'lucide-react';
-import { Card, CardContent } from './ui/card';
+import { Search, Filter, Download, UserCircle, CheckCircle, XCircle, Loader2, ArrowLeft, Sparkles } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import * as XLSX from 'xlsx';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface ResultsTabProps {
   examId: string | null;
@@ -34,7 +35,10 @@ export default function ResultsTab({ examId, onBack }: ResultsTabProps) {
   const [selectedClassId, setSelectedClassId] = useState<string>('all');
   const [classes, setClasses] = useState<Class[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [studentStats, setStudentStats] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -80,6 +84,21 @@ export default function ResultsTab({ examId, onBack }: ResultsTabProps) {
           fetched.push({ id: doc.id, ...doc.data() } as Submission);
         });
         setSubmissions(fetched);
+
+        // Fetch Stats for these students
+        const emails = Array.from(new Set(fetched.map(s => s.studentEmail.toLowerCase())));
+        if (emails.length > 0) {
+          const statsMap: Record<string, number> = {};
+          for (let i = 0; i < emails.length; i += 30) {
+            const chunk = emails.slice(i, i + 30);
+            const qStats = query(collection(db, 'studentStats'), where('email', 'in', chunk));
+            const statsSnap = await getDocs(qStats);
+            statsSnap.forEach(doc => {
+              statsMap[doc.data().email.toLowerCase()] = doc.data().badgeCount || 0;
+            });
+          }
+          setStudentStats(statsMap);
+        }
       } catch (error) {
         handleFirestoreError(error, OperationType.LIST, 'submissions');
       } finally {
@@ -104,9 +123,47 @@ export default function ResultsTab({ examId, onBack }: ResultsTabProps) {
     return matchSearch && selectedClass.studentEmails.includes(sub.studentEmail || '');
   });
 
+  const totalPages = Math.ceil(filteredSubmissions.length / itemsPerPage);
+  const paginatedSubmissions = filteredSubmissions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedClassId]);
+
   const avgScore = filteredSubmissions.length > 0 
     ? (filteredSubmissions.reduce((sum, sub) => sum + sub.score, 0) / filteredSubmissions.length).toFixed(1)
-    : 0;
+    : '0.0';
+
+  const generateChartData = () => {
+    if (filteredSubmissions.length === 0) return [];
+
+    const bins = {
+      '0-2 điểm': 0,
+      '2-4 điểm': 0,
+      '4-6 điểm': 0,
+      '6-8 điểm': 0,
+      '8-10 điểm': 0,
+    };
+
+    filteredSubmissions.forEach(sub => {
+      // Normalize to 10 scale just in case maxScore is not 10.
+      const normalizedScore = sub.maxScore > 0 ? (sub.score / sub.maxScore) * 10 : 0;
+      if (normalizedScore <= 2) bins['0-2 điểm']++;
+      else if (normalizedScore <= 4) bins['2-4 điểm']++;
+      else if (normalizedScore <= 6) bins['4-6 điểm']++;
+      else if (normalizedScore <= 8) bins['6-8 điểm']++;
+      else bins['8-10 điểm']++;
+    });
+
+    return Object.keys(bins).map(key => ({
+      name: key,
+      count: bins[key as keyof typeof bins]
+    }));
+  };
+  const chartData = generateChartData();
 
   const exportToExcel = () => {
     if (filteredSubmissions.length === 0) return;
@@ -190,6 +247,30 @@ export default function ResultsTab({ examId, onBack }: ResultsTabProps) {
         </Card>
       </div>
 
+      {filteredSubmissions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Phổ điểm</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="name" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip 
+                    formatter={(value: any) => [`${value} học sinh`, 'Số lượng']}
+                    cursor={{fill: '#f1f5f9'}}
+                  />
+                  <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
@@ -235,13 +316,21 @@ export default function ResultsTab({ examId, onBack }: ResultsTabProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
-              {filteredSubmissions.map((sub, i) => (
+              {paginatedSubmissions.map((sub, i) => (
                 <tr key={i} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <UserCircle className="w-8 h-8 text-slate-400" />
                       <div>
-                        <span className="font-semibold text-slate-900 block">{sub.studentName}</span>
+                        <div className="flex items-center gap-2">
+                           <span className="font-semibold text-slate-900 block">{sub.studentName}</span>
+                           {(studentStats[sub.studentEmail.toLowerCase()] || 0) > 0 && (
+                             <div className="flex items-center gap-0.5 bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-full border border-indigo-100 text-[10px] font-bold" title={`${studentStats[sub.studentEmail.toLowerCase()]} Huy hiệu`}>
+                               <Sparkles className="w-2.5 h-2.5 fill-indigo-500" />
+                               {studentStats[sub.studentEmail.toLowerCase()]}
+                             </div>
+                           )}
+                        </div>
                         <span className="text-xs text-slate-500">{sub.studentEmail}</span>
                       </div>
                     </div>
@@ -266,6 +355,53 @@ export default function ResultsTab({ examId, onBack }: ResultsTabProps) {
               ))}
             </tbody>
           </table>
+          )}
+          
+          {!loading && filteredSubmissions.length > itemsPerPage && (
+            <div className="px-6 py-4 flex items-center justify-between border-t border-slate-100 bg-slate-50/50">
+              <p className="text-sm text-slate-500">
+                Hiển thị <span className="font-medium text-slate-700">{(currentPage - 1) * itemsPerPage + 1}</span> đến <span className="font-medium text-slate-700">{Math.min(currentPage * itemsPerPage, filteredSubmissions.length)}</span> trong tổng số <span className="font-medium text-slate-700">{filteredSubmissions.length}</span> kết quả
+              </p>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => prev - 1)}
+                >
+                  Trước
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) pageNum = i + 1;
+                    else if (currentPage <= 3) pageNum = i + 1;
+                    else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                    else pageNum = currentPage - 2 + i;
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        className="w-8 h-8 p-0"
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(prev => prev + 1)}
+                >
+                  Sau
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       </Card>

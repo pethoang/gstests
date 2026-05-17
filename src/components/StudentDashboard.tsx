@@ -4,7 +4,9 @@ import { db } from '../lib/firebase';
 import { User } from 'firebase/auth';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { FileText, Clock, Play, GraduationCap, CheckCircle, Target, Trophy, Sparkles, BookOpen, AlertCircle } from 'lucide-react';
+import { FileText, Clock, Play, GraduationCap, CheckCircle, Target, Trophy, Medal, BookOpen, AlertCircle, Award, Star } from 'lucide-react';
+import StudentBadgesTab from './StudentBadgesTab';
+import StudentLeaderboard from './StudentLeaderboard';
 
 interface StudentDashboardProps {
   user: User;
@@ -43,13 +45,23 @@ interface LeaderboardEntry {
   submissionCount: number;
 }
 
+const CustomBadgeIcon = ({ className = "w-6 h-6", starClassName = "w-[40%] h-[40%]" }) => (
+  <div className={`relative flex items-center justify-center ${className}`}>
+    <Medal className="w-full h-full text-indigo-600" />
+    <div className="absolute inset-0 flex items-center justify-center translate-y-1">
+      <Star className={`${starClassName} text-white fill-white`} />
+    </div>
+  </div>
+);
+
 export default function StudentDashboard({ user, onLogout, onSwitchRole }: StudentDashboardProps) {
   const [exams, setExams] = useState<Exam[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [badgeCount, setBadgeCount] = useState(0);
   const [myRank, setMyRank] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'pending' | 'completed' | 'leaderboard'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'completed' | 'badges'>('pending');
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -167,6 +179,17 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
         } catch (lbError) {
           console.error("Error fetching leaderboard: ", lbError);
         }
+
+        // Fetch Student Stats (Badges)
+        try {
+          const statsRef = doc(db, 'studentStats', user.email.toLowerCase());
+          const statsSnap = await getDoc(statsRef);
+          if (statsSnap.exists()) {
+            setBadgeCount(statsSnap.data().badgeCount || 0);
+          }
+        } catch (statsErr) {
+          console.error("Error fetching student stats: ", statsErr);
+        }
       } catch (error) {
         console.error('Error fetching student dashboard info:', error);
       } finally {
@@ -230,58 +253,112 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
       </header>
 
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        
-        {/* Welcome & Stats Section */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-           <div className="md:col-span-8 bg-gradient-to-br from-[#0d9388] to-[#0a7b72] rounded-2xl p-8 text-white relative overflow-hidden shadow-lg border border-[#0d9388]/20">
-              <div className="relative z-10">
-                 <h2 className="text-3xl font-extrabold mb-2 flex items-center gap-2">
-                    Xin chào, {user.displayName || user.email?.split('@')[0]}! <Sparkles className="w-6 h-6 text-yellow-300" />
-                 </h2>
-                 <p className="text-teal-50 text-lg max-w-lg mb-6 leading-relaxed">
-                    Hôm nay là một ngày tuyệt vời để học hỏi thêm những điều mới. Bạn có {availableExams.length} nhiệm vụ đang chờ hoàn thành.
-                 </p>
-                 <Button 
-                   onClick={() => setActiveTab('pending')}
-                   className="bg-white text-[#0d9388] hover:bg-slate-50 font-bold border-0 shadow-sm"
-                 >
-                    Xem nhiệm vụ ngay
-                 </Button>
+        {/* Welcome Section - Full Width */}
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-[#0d9388] p-6 sm:p-8 text-white shadow-xl shadow-teal-950/20 border border-teal-700/30 mb-6">
+          <div className="relative z-10 h-full flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex-1">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-teal-50 text-[10px] font-bold uppercase tracking-wider mb-4 border border-white/10 backdrop-blur-md">
+                <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+                Hệ thống đang hoạt động
               </div>
-              <BookOpen className="absolute -bottom-6 -right-6 w-48 h-48 text-white/10 rotate-[-15deg] pointer-events-none" />
-           </div>
-
-           <div className="md:col-span-4 flex flex-col gap-4">
-              <Card className="flex-1 border-slate-200 shadow-sm flex flex-col justify-center relative overflow-hidden">
-                 <CardContent className="p-6 flex items-center gap-4 relative z-10">
-                    <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0">
-                       <Target className="w-6 h-6" />
-                    </div>
-                    <div>
-                       <div className="text-sm font-medium text-slate-500 mb-1">Đã hoàn thành</div>
-                       <div className="text-3xl font-black text-slate-800">{submissions.length} <span className="text-lg font-medium text-slate-400">bài</span></div>
-                    </div>
-                 </CardContent>
-                 <div className="absolute right-0 top-0 w-24 h-full bg-gradient-to-l from-blue-50/50 to-transparent pointer-events-none" />
-              </Card>
-
-              <Card className="flex-1 border-slate-200 shadow-sm flex flex-col justify-center relative overflow-hidden">
-                 <CardContent className="p-6 flex items-center gap-4 relative z-10">
-                    <div className="w-12 h-12 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center shrink-0">
-                       <Trophy className="w-6 h-6" />
-                    </div>
-                    <div>
-                       <div className="text-sm font-medium text-slate-500 mb-1">Điểm trung bình</div>
-                       <div className="text-3xl font-black text-slate-800">{averageScore} <span className="text-lg font-medium text-slate-400">/ 10</span></div>
-                    </div>
-                 </CardContent>
-                 <div className="absolute right-0 top-0 w-24 h-full bg-gradient-to-l from-yellow-50/50 to-transparent pointer-events-none" />
-              </Card>
-           </div>
+              <h2 className="text-2xl sm:text-4xl font-black mb-4 tracking-tight leading-[1.1]">
+                Xin chào, <span className="text-yellow-300">{user.displayName?.split(' ').pop() || user.email?.split('@')[0]}</span>! 👋
+              </h2>
+              <p className="text-teal-50/80 text-base max-w-md mb-6 leading-relaxed font-medium">
+                {availableExams.length > 0 
+                  ? `Bạn có ${availableExams.length} bài thi đang chờ. Hãy nỗ lực hết mình nhé!`
+                  : "Bạn đã hoàn thành xuất sắc mọi bài thi. Nghỉ ngơi nhé!"}
+              </p>
+              
+              <div className="flex flex-wrap items-center gap-4">
+                <Button 
+                  onClick={() => {
+                    setActiveTab('pending');
+                    document.getElementById('student-tabs-section')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="bg-white text-[#0d9388] hover:bg-slate-50 font-black px-6 py-5 rounded-xl shadow-2xl shadow-teal-900/40 group text-sm"
+                >
+                  Vào thi ngay
+                  <Play className="w-4 h-4 ml-2 fill-current group-hover:translate-x-1 transition-transform" />
+                </Button>
+                
+                <div className="hidden sm:flex items-center gap-3 bg-teal-800/40 px-3 py-2 rounded-xl border border-white/5 backdrop-blur-sm">
+                   <div className="flex -space-x-2">
+                      {[1,2,3].map(i => (
+                        <div key={i} className="w-7 h-7 rounded-full border-2 border-[#0d9388] bg-teal-700 flex items-center justify-center text-[10px] font-bold">
+                           {String.fromCharCode(64 + i)}
+                        </div>
+                      ))}
+                   </div>
+                   <span className="text-[10px] font-bold text-teal-100">+12 bạn khác</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="hidden lg:block relative shrink-0">
+               <BookOpen className="w-48 h-48 text-white/10 rotate-[-15deg]" />
+            </div>
+          </div>
+          
+          {/* Background Decorations */}
+          <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-white/5 to-transparent pointer-events-none" />
+          <div className="absolute -top-12 -right-12 w-64 h-64 bg-teal-400/10 rounded-full blur-3xl" />
         </div>
 
-        {/* Custom Tabs Navigation */}
-        <div className="flex items-center gap-2 border-b border-slate-200">
+        {/* Stats Section - 3 Columns Below */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[
+            { 
+              label: 'Huy hiệu đạt được', 
+              value: badgeCount, 
+              suffix: 'huy hiệu', 
+              icon: CustomBadgeIcon, 
+              color: 'text-indigo-600', 
+              bg: 'bg-indigo-50',
+              borderColor: 'border-indigo-100'
+            },
+            { 
+              label: 'Bài thi đã xong', 
+              value: submissions.length, 
+              suffix: 'bài tập', 
+              icon: Target, 
+              color: 'text-emerald-600', 
+              bg: 'bg-emerald-50',
+              borderColor: 'border-emerald-100'
+            },
+            { 
+              label: 'Điểm trung bình', 
+              value: averageScore, 
+              suffix: '/ 10 điểm', 
+              icon: Trophy, 
+              color: 'text-amber-600', 
+              bg: 'bg-amber-50',
+              borderColor: 'border-amber-100'
+            }
+          ].map((stat, idx) => (
+            <Card key={idx} className={`flex-1 border shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden bg-white ${stat.borderColor} rounded-2xl`}>
+              <CardContent className="p-6 flex items-center gap-5 relative z-10">
+                <div className={`w-14 h-14 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-500`}>
+                  <stat.icon className="w-7 h-7" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1">{stat.label}</div>
+                  <div className="flex items-baseline gap-1.5">
+                    <div className="text-3xl font-black text-slate-800 tracking-tight">{stat.value}</div>
+                    <div className="text-xs font-bold text-slate-400 uppercase">{stat.suffix}</div>
+                  </div>
+                </div>
+              </CardContent>
+              <div className={`absolute top-0 right-0 w-1.5 h-full ${stat.bg.replace('bg-', 'bg-opacity-50 bg-')} opacity-0 group-hover:opacity-100 transition-opacity`} />
+            </Card>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Main Content Area */}
+          <div className="lg:col-span-8 space-y-8">
+            {/* Custom Tabs Navigation */}
+        <div id="student-tabs-section" className="flex items-center gap-2 border-b border-slate-200">
            <button
              onClick={() => setActiveTab('pending')}
              className={`pb-4 px-4 font-semibold text-sm transition-all relative ${
@@ -323,18 +400,18 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
            </button>
            
            <button
-             onClick={() => setActiveTab('leaderboard')}
+             onClick={() => setActiveTab('badges')}
              className={`pb-4 px-4 font-semibold text-sm transition-all relative ${
-               activeTab === 'leaderboard' 
+               activeTab === 'badges' 
                  ? 'text-[#0d9388]' 
                  : 'text-slate-500 hover:text-slate-700'
              }`}
            >
              <div className="flex items-center gap-2">
-               <Trophy className="w-4 h-4" />
-               Bảng xếp hạng
+               <Award className="w-4 h-4" />
+               Bảng thành tích
              </div>
-             {activeTab === 'leaderboard' && (
+             {activeTab === 'badges' && (
                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#0d9388] rounded-t-full" />
              )}
            </button>
@@ -360,11 +437,11 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
                         <div className="flex flex-wrap items-center gap-2 mb-3">
                            {exam.grade ? (
                              <span className="bg-indigo-50 text-indigo-700 text-[10px] uppercase font-bold px-2 py-1 rounded-md border border-indigo-100 tracking-wider">
-                               Khối {exam.grade}
+                                Khối {exam.grade}
                              </span>
                            ) : (
                              <span className="bg-slate-100 text-slate-600 text-[10px] uppercase font-bold px-2 py-1 rounded-md border border-slate-200 tracking-wider">
-                               Chưa phân loại
+                                Chưa phân loại
                              </span>
                            )}
                            {exam.examType && (
@@ -476,7 +553,7 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
                                onClick={() => window.location.hash = `/review/${sub.id}`}
                                className="w-full sm:w-auto font-semibold text-white bg-[#0d9388] hover:bg-[#ff4500] shrink-0 border-0 transition-colors"
                              >
-                               Xem lại
+                                Xem lại
                              </Button>
                            </div>
                          </div>
@@ -488,75 +565,22 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
             </section>
           )}
 
-          {activeTab === 'leaderboard' && (
-            <section className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-               <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                 <div className="bg-gradient-to-r from-amber-500 to-orange-400 p-8 text-white text-center relative overflow-hidden">
-                    <Trophy className="w-16 h-16 mx-auto mb-4 text-yellow-200 opacity-90 shadow-sm" />
-                    <h2 className="text-2xl font-bold mb-2">Bảng Xếp Hạng Tháng {new Date().getMonth() + 1}</h2>
-                    <p className="text-amber-50">Cố gắng hoàn thành bài tập để tích lũy điểm số và lọt vào top 10 nhé!</p>
-                    {myRank !== null && (
-                      <div className="mt-6 inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full border border-white/30 backdrop-blur-sm">
-                        <span className="font-medium text-amber-50">Vị trí của bạn:</span>
-                        <span className="font-bold text-xl text-yellow-100">Top {myRank}</span>
-                      </div>
-                    )}
-                 </div>
-                 
-                 <div className="p-0">
-                    {leaderboard.length === 0 ? (
-                      <div className="p-12 text-center text-slate-500">
-                         Chưa có dữ liệu bảng xếp hạng tháng này.
-                      </div>
-                    ) : (
-                      <div className="divide-y divide-slate-100">
-                         {leaderboard.slice(0, 10).map((entry, index) => {
-                           const isTop3 = index < 3;
-                           const isMe = entry.studentId === user.uid;
-                           return (
-                             <div 
-                               key={entry.id} 
-                               className={`flex items-center p-4 sm:p-6 transition-colors ${isMe ? 'bg-amber-50/50' : 'hover:bg-slate-50'}`}
-                             >
-                                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-sm sm:text-base shrink-0 border-2 ${
-                                  index === 0 ? 'bg-yellow-100 text-yellow-600 border-yellow-200' :
-                                  index === 1 ? 'bg-slate-100 text-slate-500 border-slate-200' :
-                                  index === 2 ? 'bg-orange-100 text-orange-600 border-orange-200' :
-                                  'bg-transparent text-slate-400 border-transparent'
-                                }`}>
-                                  {index + 1}
-                                </div>
-                                
-                                <div className="ml-4 sm:ml-6 flex-1 flex items-center gap-3 space-x-2">
-                                   <div className="w-10 h-10 bg-[#0d9388]/10 text-[#0d9388] rounded-full flex items-center justify-center font-bold uppercase shrink-0">
-                                      {entry.studentName?.[0] || 'U'}
-                                   </div>
-                                   <div>
-                                     <div className="font-bold text-slate-800 flex items-center gap-2">
-                                        {entry.studentName}
-                                        {isMe && <span className="text-[10px] bg-[#0d9388] text-white px-1.5 py-0.5 rounded-full uppercase tracking-wider">Bạn</span>}
-                                     </div>
-                                     <div className="text-xs text-slate-500">
-                                        {entry.submissionCount} bài đã nộp
-                                     </div>
-                                   </div>
-                                </div>
-                                
-                                <div className="text-right ml-4">
-                                   <div className="font-black text-xl text-slate-800">{entry.totalScore.toFixed(0)}</div>
-                                   <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm</div>
-                                </div>
-                             </div>
-                           );
-                         })}
-                      </div>
-                    )}
-                 </div>
-               </div>
-            </section>
+          {activeTab === 'badges' && (
+             <StudentBadgesTab badgeCount={badgeCount} />
           )}
         </div>
-      </main>
+      </div>
+
+        {/* Sidebar Area */}
+        <div className="lg:col-span-4 space-y-6">
+          <StudentLeaderboard 
+            leaderboard={leaderboard} 
+            user={user} 
+            myRank={myRank} 
+          />
+        </div>
+      </div>
+    </main>
 
       {/* FOOTER */}
       <footer className="bg-slate-100 border-t border-slate-200 mt-auto shrink-0 shadow-[0_-1px_3px_rgba(0,0,0,0.05)] relative z-10">

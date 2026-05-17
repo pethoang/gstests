@@ -23,6 +23,8 @@ export default function ViolationsTab() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const fetchViolations = async () => {
     const user = auth.currentUser;
@@ -71,6 +73,13 @@ export default function ViolationsTab() {
     fetchViolations();
   }, []);
 
+  const paginatedViolations = violations.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalPages = Math.ceil(violations.length / itemsPerPage);
+
   const handleDelete = async (id: string) => {
     try {
        await deleteDoc(doc(db, 'violations', id));
@@ -105,7 +114,7 @@ export default function ViolationsTab() {
     if (!window.confirm(`Bạn có chắc muốn xóa ${selectedIds.size} vi phạm đã chọn?`)) return;
     setIsDeleting(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => deleteDoc(doc(db, 'violations', id))));
+      await Promise.all(Array.from(selectedIds).map(id => deleteDoc(doc(db, 'violations', id as string))));
       setSelectedIds(new Set());
       fetchViolations();
     } catch (error) {
@@ -233,7 +242,7 @@ export default function ViolationsTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {violations.map((violation) => (
+                {paginatedViolations.map((violation) => (
                   <tr key={violation.id} className={`hover:bg-slate-50 transition-colors ${selectedIds.has(violation.id) ? 'bg-blue-50/50' : ''}`}>
                     <td className="px-4 py-4 w-12">
                       <input 
@@ -278,6 +287,53 @@ export default function ViolationsTab() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        
+        {!loading && violations.length > itemsPerPage && (
+          <div className="px-6 py-4 flex items-center justify-between border-t border-slate-100 bg-slate-50/50">
+            <p className="text-sm text-slate-500">
+              Hiển thị <span className="font-medium text-slate-700">{(currentPage - 1) * itemsPerPage + 1}</span> đến <span className="font-medium text-slate-700">{Math.min(currentPage * itemsPerPage, violations.length)}</span> trong tổng số <span className="font-medium text-slate-700">{violations.length}</span> vi phạm
+            </p>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => prev - 1)}
+              >
+                Trước
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) pageNum = i + 1;
+                  else if (currentPage <= 3) pageNum = i + 1;
+                  else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                  else pageNum = currentPage - 2 + i;
+                  
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      className="w-8 h-8 p-0"
+                      onClick={() => setCurrentPage(pageNum)}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => prev + 1)}
+              >
+                Sau
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>

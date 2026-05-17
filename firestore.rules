@@ -94,6 +94,14 @@ service cloud.firestore {
              data.details is string && data.details.size() <= 500;
     }
 
+    function isValidStudentStats(data) {
+      return data.keys().hasAll(['email', 'badgeCount', 'updatedAt']) &&
+             data.keys().size() == 3 &&
+             data.email is string && data.email.size() <= 100 &&
+             data.badgeCount is number &&
+             data.updatedAt is string && data.updatedAt.size() <= 100;
+    }
+
     // Collections
     match /users/{userId} {
       allow get: if isValidId(userId) && (isSignedIn() && request.auth.uid == userId);
@@ -170,6 +178,13 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && incoming().studentId == request.auth.uid;
       allow update: if isSignedIn() && existing().studentId == request.auth.uid;
+    }
+
+    match /studentStats/{email} {
+      allow get: if isSignedIn(); 
+      allow list: if isSignedIn(); 
+      allow create: if isSignedIn() && request.auth.token.email.lower() == email.lower() && isValidStudentStats(incoming());
+      allow update: if isSignedIn() && request.auth.token.email.lower() == email.lower() && isValidStudentStats(incoming()) && incoming().email == existing().email;
     }
   }
 }

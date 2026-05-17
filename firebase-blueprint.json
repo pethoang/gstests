@@ -75,6 +75,17 @@
         "details": { "type": "string" }
       },
       "required": ["examId", "examTitle", "teacherId", "studentId", "studentName", "studentEmail", "type", "timestamp", "details"]
+    },
+    "StudentStats": {
+      "title": "StudentStats",
+      "description": "Global statistics for a student, primarily for badges",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "badgeCount": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["email", "badgeCount", "updatedAt"]
     }
   },
   "firestore": {
@@ -97,6 +108,10 @@
     "/violations/{violationId}": {
       "schema": { "$ref": "#/entities/Violation" },
       "description": "Stores cheating logs. Students can create, teachers can read."
+    },
+    "/studentStats/{email}": {
+      "schema": { "$ref": "#/entities/StudentStats" },
+      "description": "Global badge counts for students, indexed by email (lowercase)."
     }
   }
 }

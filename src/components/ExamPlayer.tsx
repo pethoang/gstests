@@ -335,6 +335,28 @@ export default function ExamPlayer() {
             console.error("Error updating leaderboard: ", lbErr);
             // Don't fail the whole submission if leaderboard update fails
           }
+
+          // Award Badge if score > 50%
+          if (maxScore > 0 && totalScore / maxScore > 0.5) {
+            try {
+              const studentStatsRef = doc(db, 'studentStats', user.email!.toLowerCase());
+              const statsSnap = await getDoc(studentStatsRef);
+              if (statsSnap.exists()) {
+                await updateDoc(studentStatsRef, {
+                  badgeCount: increment(1),
+                  updatedAt: new Date().toISOString()
+                });
+              } else {
+                await setDoc(studentStatsRef, {
+                  email: user.email!.toLowerCase(),
+                  badgeCount: 1,
+                  updatedAt: new Date().toISOString()
+                });
+              }
+            } catch (badgeErr) {
+              console.error("Error awarding badge:", badgeErr);
+            }
+          }
         }
       }
       setIsSubmitted(true);

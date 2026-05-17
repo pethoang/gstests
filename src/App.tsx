@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { FileUp, FileText, Edit3, Eye, Users, FileType, CheckCircle, Library, LogIn, Menu, X, LayoutDashboard, ShieldAlert, RefreshCcw, AlertTriangle, GraduationCap } from 'lucide-react';
+import { FileUp, FileText, Edit3, Eye, Users, FileType, CheckCircle, Library, LogIn, Menu, X, LayoutDashboard, ShieldAlert, RefreshCcw, AlertTriangle, GraduationCap, Sparkles } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Button } from './components/ui/button';
 import { Question, Grade, ExamType } from './types';
@@ -23,8 +23,9 @@ import { doc, getDoc, setDoc, collection, query, where, getDocs, writeBatch } fr
 
 import OverviewTab from './components/OverviewTab';
 import ViolationsTab from './components/ViolationsTab';
+import BadgesTab from './components/BadgesTab';
 
-type TabType = 'overview' | 'upload' | 'analysis' | 'edit' | 'preview' | 'results' | 'guidelines' | 'history' | 'classes' | 'violations';
+type TabType = 'overview' | 'upload' | 'analysis' | 'edit' | 'preview' | 'results' | 'guidelines' | 'history' | 'classes' | 'violations' | 'badges';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -204,17 +205,40 @@ export default function App() {
 
     setIsResetting(true);
     try {
-      // Fetch all submissions for this teacher
+      // 1. Fetch all classes of this teacher to get student emails
+      const qClasses = query(collection(db, 'classes'), where('teacherId', '==', user.uid));
+      const classesSnap = await getDocs(qClasses);
+      const studentEmails = new Set<string>();
+      classesSnap.forEach(doc => {
+        const data = doc.data();
+        if (data.studentEmails && Array.isArray(data.studentEmails)) {
+          data.studentEmails.forEach((email: string) => studentEmails.add(email.toLowerCase()));
+        }
+      });
+
+      // 2. Fetch all submissions for this teacher
       const subQuery = query(collection(db, 'submissions'), where('teacherId', '==', user.uid));
       const subSnapshot = await getDocs(subQuery);
       
-      // Fetch all violations for this teacher
+      // 3. Fetch all violations for this teacher
       const violQuery = query(collection(db, 'violations'), where('teacherId', '==', user.uid));
       const violSnapshot = await getDocs(violQuery);
 
       // Delete in batches of 500 (Firestore limit is 500 operations per batch)
       let batch = writeBatch(db);
       let count = 0;
+
+      // Delete student stats
+      const emailsArray = Array.from(studentEmails);
+      for (const email of emailsArray) {
+        batch.delete(doc(db, 'studentStats', email));
+        count++;
+        if (count === 500) {
+          await batch.commit();
+          batch = writeBatch(db);
+          count = 0;
+        }
+      }
 
       for (const docSnap of subSnapshot.docs) {
         batch.delete(docSnap.ref);
@@ -242,7 +266,7 @@ export default function App() {
 
       setStatsKey(prev => prev + 1); // trigger refresh
       setShowResetModal(false);
-      alert('Đã làm mới dữ liệu thành công! Tất cả điểm số và bài làm đã được xóa.');
+      alert('Đã làm mới dữ liệu thành công! Tất cả điểm số, vi phạm và huy hiệu đã được xóa.');
     } catch (error) {
       console.error("Error resetting data:", error);
       alert('Có lỗi xảy ra khi làm mới dữ liệu. Vui lòng thử lại.');
@@ -257,6 +281,7 @@ export default function App() {
     { id: 'history', icon: Library, label: 'Kho đề thi' },
     { id: 'classes', icon: Users, label: 'Học sinh & Lớp học' },
     { id: 'violations', icon: ShieldAlert, label: 'Vi phạm' },
+    { id: 'badges', icon: Sparkles, label: 'Quản lý huy hiệu' },
     { id: 'analysis', icon: FileText, label: 'Kết quả phân tích', disabled: !hasAnalyzed },
     { id: 'edit', icon: Edit3, label: 'Chỉnh sửa câu hỏi', disabled: !hasAnalyzed },
     { id: 'preview', icon: Eye, label: 'Xem trước bài làm', disabled: !hasAnalyzed },
@@ -410,7 +435,7 @@ export default function App() {
         )}>
           <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2 no-scrollbar">
             <div className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] mb-3 px-3 mt-2">Quản lý</div>
-            {navItems.filter(i => ['overview', 'upload', 'history', 'classes', 'violations', 'guidelines'].includes(i.id)).map((item) => (
+            {navItems.filter(i => ['overview', 'upload', 'history', 'classes', 'violations', 'badges', 'guidelines'].includes(i.id)).map((item) => (
               <button
                 key={item.id}
                 onClick={() => {
@@ -513,6 +538,7 @@ export default function App() {
               {activeTab === 'classes' && <ClassesTab />}
               {activeTab === 'history' && <HistoryTab onEditExam={handleEditExistingExam} />}
               {activeTab === 'violations' && <ViolationsTab />}
+              {activeTab === 'badges' && <BadgesTab />}
               {activeTab === 'analysis' && <AnalysisTab questions={questions} onNext={() => setActiveTab('edit')} />}
               {activeTab === 'edit' && <EditTab 
                 questions={questions} 
@@ -573,7 +599,7 @@ export default function App() {
                 <h3 className="text-xl font-bold text-slate-900">Làm mới dữ liệu</h3>
               </div>
               <p className="text-slate-600 mb-4 leading-relaxed">
-                Bạn có chắc chắn muốn xóa tất cả <strong>kết quả nộp bài</strong> và <strong>lịch sử vi phạm</strong>? 
+                Bạn có chắc chắn muốn xóa tất cả <strong>kết quả nộp bài</strong>, <strong>lịch sử vi phạm</strong> và <strong>huy hiệu học sinh</strong>? 
                 Thao tác này thường được sử dụng khi bắt đầu một <strong>năm học mới</strong> để dọn dẹp dữ liệu cũ.
               </p>
               <div className="bg-orange-50 p-3 rounded-md text-sm text-orange-800 border border-orange-200 mb-6 font-medium">
