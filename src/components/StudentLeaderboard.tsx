@@ -18,7 +18,7 @@ interface StudentLeaderboardProps {
 
 export default function StudentLeaderboard({ leaderboard, user, myRank }: StudentLeaderboardProps) {
   return (
-    <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden sticky top-24">
+    <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden sticky top-24">
       <div className="bg-gradient-to-br from-amber-500 to-orange-400 p-6 text-white text-center relative overflow-hidden">
         <Trophy className="w-12 h-12 mx-auto mb-3 text-yellow-200 opacity-90 shadow-sm" />
         <h2 className="text-xl font-black mb-1 tracking-tight">Vinh Danh Top 10</h2>

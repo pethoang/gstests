@@ -254,7 +254,7 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
 
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Welcome Section - Full Width */}
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-[#0d9388] p-6 sm:p-8 text-white shadow-xl shadow-teal-950/20 border border-teal-700/30 mb-6">
+        <div className="relative overflow-hidden rounded-lg bg-[#0d9388] p-6 sm:p-8 text-white shadow-sm border border-teal-700/30 mb-6">
           <div className="relative z-10 h-full flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex-1">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-teal-50 text-[10px] font-bold uppercase tracking-wider mb-4 border border-white/10 backdrop-blur-md">
@@ -276,13 +276,13 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
                     setActiveTab('pending');
                     document.getElementById('student-tabs-section')?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="bg-white text-[#0d9388] hover:bg-slate-50 font-black px-6 py-5 rounded-xl shadow-2xl shadow-teal-900/40 group text-sm"
+                  className="bg-white text-[#0d9388] hover:bg-slate-50 font-black px-6 py-5 rounded-md shadow-sm group text-sm"
                 >
                   Vào thi ngay
                   <Play className="w-4 h-4 ml-2 fill-current group-hover:translate-x-1 transition-transform" />
                 </Button>
                 
-                <div className="hidden sm:flex items-center gap-3 bg-teal-800/40 px-3 py-2 rounded-xl border border-white/5 backdrop-blur-sm">
+                <div className="hidden sm:flex items-center gap-3 bg-teal-800/40 px-3 py-2 rounded-md border border-white/5 backdrop-blur-sm">
                    <div className="flex -space-x-2">
                       {[1,2,3].map(i => (
                         <div key={i} className="w-7 h-7 rounded-full border-2 border-[#0d9388] bg-teal-700 flex items-center justify-center text-[10px] font-bold">
@@ -336,9 +336,9 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
               borderColor: 'border-amber-100'
             }
           ].map((stat, idx) => (
-            <Card key={idx} className={`flex-1 border shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden bg-white ${stat.borderColor} rounded-2xl`}>
+            <Card key={idx} className={`flex-1 border shadow-sm hover:shadow transition-all duration-300 group overflow-hidden bg-white ${stat.borderColor} rounded-lg`}>
               <CardContent className="p-6 flex items-center gap-5 relative z-10">
-                <div className={`w-14 h-14 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-500`}>
+                <div className={`w-14 h-14 ${stat.bg} ${stat.color} rounded-md flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-500`}>
                   <stat.icon className="w-7 h-7" />
                 </div>
                 <div>
@@ -422,7 +422,7 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
           {activeTab === 'pending' && (
             <section className="animate-in fade-in slide-in-from-bottom-2 duration-500">
               {availableExams.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-12 flex flex-col items-center justify-center text-center">
+                <div className="bg-white rounded-lg border border-dashed border-slate-200 p-12 flex flex-col items-center justify-center text-center">
                    <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-4">
                       <CheckCircle className="w-10 h-10" />
                    </div>
@@ -432,7 +432,7 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {availableExams.map(exam => (
-                    <Card key={exam.id} className="group hover:shadow-lg transition-all duration-300 border-slate-200 overflow-hidden flex flex-col bg-white">
+                    <Card key={exam.id} className="group hover:shadow transition-all duration-300 border-slate-200 overflow-hidden flex flex-col bg-white">
                       <CardContent className="p-6 flex flex-col h-full">
                         <div className="flex flex-wrap items-center gap-2 mb-3">
                            {exam.grade ? (
@@ -468,13 +468,13 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
                         </div>
                         
                         <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
-                          <div className="flex items-center text-sm font-medium text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                          <div className="flex items-center text-sm font-medium text-slate-600 bg-slate-50 px-3 py-1.5 rounded-md border border-slate-200">
                             <Clock className="w-4 h-4 mr-1.5 text-slate-400" />
                             {exam.timeLimit > 0 ? `${exam.timeLimit} phút` : 'Không giới hạn'}
                           </div>
                           <Button 
                              onClick={() => handleTakeExam(exam.id)} 
-                             className="bg-[#0d9388] hover:bg-[#0a7b72] shadow-sm shadow-[#0d9388]/20 transition-all font-semibold rounded-lg"
+                             className="bg-[#0d9388] hover:bg-[#0a7b72] shadow-none transition-all font-semibold rounded-md"
                           >
                             Làm bài <Play className="w-4 h-4 ml-1.5 fill-current" />
                           </Button>
@@ -490,7 +490,7 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
           {activeTab === 'completed' && (
             <section className="animate-in fade-in slide-in-from-bottom-2 duration-500">
               {submissions.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-12 flex flex-col items-center justify-center text-center">
+                <div className="bg-white rounded-lg border border-dashed border-slate-200 p-12 flex flex-col items-center justify-center text-center">
                    <div className="w-20 h-20 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-4">
                       <AlertCircle className="w-10 h-10" />
                    </div>
@@ -498,7 +498,7 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
                    <p className="text-slate-500 max-w-sm">Kết quả và lịch sử làm bài của bạn sẽ xuất hiện ở đây.</p>
                 </div>
               ) : (
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
                    <div className="grid grid-cols-1 divide-y divide-slate-100">
                      {[...submissions].sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()).map(sub => {
                        const scorePercentage = (sub.score / sub.maxScore) * 100;
@@ -517,7 +517,7 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
                              </div>
                            </div>
                            
-                           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-8 bg-slate-50 sm:bg-transparent p-4 sm:p-0 rounded-xl sm:rounded-none w-full sm:w-auto">
+                           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-8 bg-slate-50 sm:bg-transparent p-4 sm:p-0 rounded-md sm:rounded-none w-full sm:w-auto">
                              <div className="flex items-center justify-between sm:justify-start gap-4">
                                <div className="text-left sm:text-right">
                                  <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Điểm số</div>

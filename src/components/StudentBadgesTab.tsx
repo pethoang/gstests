@@ -29,7 +29,7 @@ export default function StudentBadgesTab({ badgeCount }: StudentBadgesTabProps) 
         <h3 className="text-2xl font-black text-slate-800 tracking-tight">Bộ Sưu Tập Huy Hiệu</h3>
         <p className="text-slate-500">Hoàn thành bài tập với kết quả tốt để mở khóa thêm nhiều huy hiệu quý giá.</p>
         <div className="pt-4 flex justify-center">
-            <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-2xl shadow-sm">
+            <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-md shadow-sm">
                 <CustomBadgeIcon className="w-6 h-6" />
                 <span className="text-lg font-black text-indigo-700">{badgeCount} huy hiệu đã thu thập</span>
             </div>
@@ -42,9 +42,9 @@ export default function StudentBadgesTab({ badgeCount }: StudentBadgesTabProps) 
           const TierIcon = tier.icon;
           
           return (
-            <Card key={idx} className={`relative overflow-hidden border-2 transition-all duration-500 ${isUnlocked ? `${tier.bg} ${tier.borderColor} shadow-lg shadow-${tier.color.split('-')[1]}-500/10` : 'bg-slate-50 border-slate-100 opacity-60'}`}>
+            <Card key={idx} className={`relative overflow-hidden border-2 transition-all duration-500 ${isUnlocked ? `${tier.bg} ${tier.borderColor} shadow shadow-${tier.color.split('-')[1]}-500/10` : 'bg-slate-50 border-slate-100 opacity-60'}`}>
               <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
-                <div className={`w-24 h-24 rounded-full flex items-center justify-center relative ${isUnlocked ? 'bg-white shadow-xl' : 'bg-slate-100 grayscale'}`}>
+                <div className={`w-24 h-24 rounded-full flex items-center justify-center relative ${isUnlocked ? 'bg-white shadow' : 'bg-slate-100 grayscale'}`}>
                   {isUnlocked ? (
                     <>
                       {idx === 2 ? (
@@ -90,14 +90,14 @@ export default function StudentBadgesTab({ badgeCount }: StudentBadgesTabProps) 
         })}
       </div>
 
-      <div className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm">
+      <div className="bg-white rounded-lg border border-slate-100 p-8 shadow-sm">
         <h4 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
             <CustomBadgeIcon className="w-5 h-5" />
             Chi tiết huy hiệu đạt được
         </h4>
         <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-10 gap-4">
             {Array.from({ length: Math.max(badgeCount + 1, 20) }).map((_, i) => (
-                <div key={i} className={`aspect-square rounded-2xl flex items-center justify-center transition-all duration-500 ${i < badgeCount ? 'bg-indigo-50 text-indigo-500 shadow-inner' : 'bg-slate-50 text-slate-200 border-2 border-dashed border-slate-100'}`}>
+                <div key={i} className={`aspect-square rounded-md flex items-center justify-center transition-all duration-500 ${i < badgeCount ? 'bg-indigo-50 text-indigo-500 shadow-inner' : 'bg-slate-50 text-slate-200 border-2 border-dashed border-slate-100'}`}>
                     {i < badgeCount ? (
                         <CustomBadgeIcon className="w-8 h-8" starClassName="w-3 h-3" />
                     ) : (
