@@ -9,6 +9,56 @@ import { Copy, CheckCircle, Loader2, LayoutGrid, X, Clock } from 'lucide-react';
 import { renderFormattedText } from '../lib/formatter';
 import { cn } from '../lib/utils';
 
+const GoogleDriveAudio = ({ url }: { url: string }) => {
+  const [hasError, setHasError] = useState(false);
+  
+  const getDirectLink = (url: string) => {
+    const match = url.match(/(?:\/d\/|id=)([a-zA-Z0-9_-]+)/);
+    if (match) {
+      return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+    }
+    return url;
+  };
+  
+  const getIframeLink = (url: string) => {
+    const match = url.match(/(?:\/d\/|id=)([a-zA-Z0-9_-]+)/);
+    if (match) {
+      return `https://drive.google.com/file/d/${match[1]}/preview`;
+    }
+    return url;
+  };
+
+  if (hasError) {
+    return (
+      <div className="w-full max-w-2xl h-[120px] rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50 relative">
+        <iframe 
+          src={getIframeLink(url)} 
+          className="w-full h-full border-none"
+          allow="autoplay"
+          title="Google Drive Audio Fallback"
+        ></iframe>
+        <div className="absolute top-0 right-0 bg-amber-100 text-amber-800 text-[10px] px-2 py-1 rounded-bl inline-block border-b border-l border-amber-200">
+          Chế độ dự phòng (Drive)
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1 w-full max-w-md">
+      <audio 
+        controls 
+        controlsList="nodownload"
+        className="w-full h-12 bg-slate-50 rounded-full border border-slate-200 shadow-sm" 
+        src={getDirectLink(url)}
+        onError={() => setHasError(true)}
+      >
+        Trình duyệt của bạn không hỗ trợ thẻ audio.
+      </audio>
+    </div>
+  );
+};
+
 interface PreviewTabProps {
   questions: Question[];
   title?: string;
@@ -187,21 +237,34 @@ export default function PreviewTab({
           const sectionQuestions = sortedQuestions.filter(q => q.section === section);
           
           // Group consecutive questions with same passage and instructions
-          const groups: { passage?: string; instructions?: string; questions: Question[] }[] = [];
+          const groups: { passage?: string; instructions?: string; audioUrl?: string; questions: Question[] }[] = [];
           
           sectionQuestions.forEach(q => {
             const lastGroup = groups[groups.length - 1];
             const currentPassage = q.passage?.trim();
             const currentInstructions = q.instructions?.trim();
+            const currentAudioUrl = q.audioUrl?.trim();
             const lastPassage = lastGroup?.passage?.trim();
             const lastInstructions = lastGroup?.instructions?.trim();
 
+            let shouldGroup = false;
+
             if (lastGroup && lastPassage === currentPassage && lastInstructions === currentInstructions) {
+              if (!currentAudioUrl || currentAudioUrl === lastGroup.audioUrl) {
+                shouldGroup = true;
+              } else if (!lastGroup.audioUrl && currentAudioUrl) {
+                shouldGroup = true;
+                lastGroup.audioUrl = q.audioUrl;
+              }
+            }
+
+            if (shouldGroup) {
               lastGroup.questions.push(q);
             } else {
               groups.push({
                 passage: q.passage,
                 instructions: q.instructions,
+                audioUrl: q.audioUrl,
                 questions: [q]
               });
             }
@@ -220,6 +283,15 @@ export default function PreviewTab({
                       {renderFormattedText(group.instructions)}
                     </div>
                   )}
+
+                  {group.audioUrl && (
+                    <div className="mb-4 px-1 py-4 flex flex-col gap-2">
+                      <GoogleDriveAudio url={group.audioUrl} />
+                      <p className="text-xs text-slate-500 italic px-2">
+                        * Lưu ý: File Google Drive cần được mở quyền chia sẻ <b>"Bất kỳ ai có liên kết" (Anyone with the link)</b>.
+                      </p>
+                    </div>
+                  )}
                   
                   {group.passage && (
                     <div className="bg-slate-50/80 p-5 sm:p-7 border border-slate-200 rounded-2xl text-slate-800 leading-relaxed mb-8 text-base sm:text-lg sm:leading-8 md:text-[1.125rem] whitespace-pre-line shadow-sm">
@@ -228,8 +300,8 @@ export default function PreviewTab({
                   )}
 
                   <div className="space-y-8">
-                    {group.questions.map((q) => (
-                      <div key={q.id} id={`question-${q.id}`} className="space-y-4 scroll-m-24">
+                    {group.questions.map((q, qIndex) => (
+                      <div key={`${q.id}-${qIndex}`} id={`question-${q.id}`} className="space-y-4 scroll-m-24">
                         <div className="text-slate-900 leading-relaxed">
                           <span className="font-bold mr-2">Question {q.order}.</span>
                           <span className="text-base">{renderFormattedText(q.content)}</span>

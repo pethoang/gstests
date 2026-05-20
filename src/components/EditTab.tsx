@@ -363,8 +363,14 @@ export default function EditTab({
       </Card>
 
       <div className="space-y-6">
-        {questions.map((q, index) => (
-          <Card key={q.id} className="relative overflow-hidden transition-all duration-200">
+        {questions.map((q, index) => {
+          const previousQ = index > 0 ? questions[index - 1] : null;
+          const isGroupStart = !previousQ || 
+            (previousQ.instructions?.trim() || '') !== (q.instructions?.trim() || '') || 
+            (previousQ.passage?.trim() || '') !== (q.passage?.trim() || '');
+
+          return (
+          <Card key={`${q.id}-${index}`} className="relative overflow-hidden transition-all duration-200">
             <div className="absolute left-0 top-0 bottom-0 w-8 bg-slate-100 flex items-center justify-center border-r border-slate-200 cursor-grab text-slate-400 hover:text-slate-600">
               <GripVertical className="w-4 h-4" />
             </div>
@@ -402,14 +408,27 @@ export default function EditTab({
               </div>
 
               <div className="space-y-4">
-                {['short_answer', 'writing', 'reading'].includes(q.type) && (
-                  <div>
-                    <Label className="mb-1 block">Chỉ dẫn / Yêu cầu (VD: Read the passage...)</Label>
-                    <Input 
-                      value={q.instructions || ''} 
-                      onChange={(e) => updateQuestion(q.id, { instructions: e.target.value })}
-                      placeholder="Nhập yêu cầu đề bài..."
-                    />
+                {(q.instructions !== undefined || ['short_answer', 'writing', 'reading'].includes(q.type) || q.section === 'Listening' || (q.instructions && q.instructions.toLowerCase().includes('listen'))) && (
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="mb-1 block">Chỉ dẫn / Yêu cầu (VD: Read the passage...)</Label>
+                      <Input 
+                        value={q.instructions || ''} 
+                        onChange={(e) => updateQuestion(q.id, { instructions: e.target.value })}
+                        placeholder="Nhập yêu cầu đề bài..."
+                      />
+                    </div>
+                    {isGroupStart && ((q.instructions || '').toLowerCase().includes('listen') || (q.instructions || '').toLowerCase().includes('nghe') || q.section === 'Listening') && (
+                      <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+                        <Label className="mb-1 block text-blue-700">Link Audio (áp dụng cho cả nhóm câu hỏi này)</Label>
+                        <Input 
+                          value={q.audioUrl || ''} 
+                          onChange={(e) => updateQuestion(q.id, { audioUrl: e.target.value })}
+                          placeholder="https://drive.google.com/file/d/..."
+                          className="bg-white border-blue-200"
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -541,7 +560,8 @@ export default function EditTab({
               </div>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
         
         <Button variant="outline" className="w-full border-dashed border-2 py-8 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-300">
           <Plus className="w-5 h-5 mr-2" />

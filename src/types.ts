@@ -23,6 +23,7 @@ export interface Question {
   confidence: ConfidenceLevel;
   passage?: string; // For reading/listening context
   instructions?: string; // e.g. "Choose the best answers"
+  audioUrl?: string; // Google Drive audio link
   isManualGrading?: boolean;
 }
 

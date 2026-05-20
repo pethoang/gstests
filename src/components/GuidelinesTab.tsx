@@ -76,6 +76,12 @@ export default function GuidelinesTab() {
                 <p className="text-sm text-slate-600">Những câu nối từ, chia động từ (fill the blanks) nên dùng "___" để tạo chỗ trống trơn tru.</p>
               </CardContent>
             </Card>
+            <Card className="border-l-4 border-l-red-500 shadow-sm">
+              <CardContent className="p-4">
+                <p className="font-semibold text-sm mb-1">5. Listening (Bài nghe)</p>
+                <p className="text-sm text-slate-600">Luôn có dòng "Listen..." ở trên cùng. Từng câu hỏi nhỏ vẫn cần đánh số "Question X:" để AI bóc tách.</p>
+              </CardContent>
+            </Card>
           </div>
 
           <div className="lg:col-span-8 relative">
@@ -164,9 +170,9 @@ export default function GuidelinesTab() {
 
                 <hr className="border-slate-200 border-dashed" />
 
-                <div className="relative group pb-8">
+                <div className="relative group pb-8 border-b border-slate-200 border-dashed">
                   <h4 className="font-bold uppercase">IV. WRITING</h4>
-                  <p className="italic text-sm mb-3">Rewrite the sentences without changing their meaning.</p>
+                  <p className="italic text-sm mb-3 text-slate-700">Rewrite the sentences without changing their meaning.</p>
                   
                   <div className="space-y-4">
                     <div>
@@ -176,6 +182,42 @@ export default function GuidelinesTab() {
                     <div>
                       <span className="font-bold mr-1">Question 7:</span> I don't have enough money to buy that car.<br/>
                       I wish _________________________________________.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="relative group pb-8">
+                  <h4 className="font-bold uppercase text-red-600">V. LISTENING</h4>
+                  <p className="italic text-sm mb-3 font-semibold text-slate-800">
+                    Listen to the conversation and choose the correct answer for each question.
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <span className="font-bold mr-1">Question 8:</span> Where did they go last Sunday?
+                      <div className="ml-4 mt-1 grid grid-cols-2 gap-2">
+                        <div>A. To the beach</div>
+                        <div>B. To the mountain</div>
+                        <div>C. To the park</div>
+                        <div>D. To the museum</div>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="font-bold mr-1">Question 9:</span> What did they eat for lunch?
+                      <div className="ml-4 mt-1 grid grid-cols-2 gap-2">
+                        <div>A. Noodles</div>
+                        <div>B. Pizza</div>
+                        <div>C. Seafood</div>
+                        <div>D. Bread</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg text-xs flex gap-3 text-red-700">
+                    <AlertCircle className="w-5 h-5 shrink-0" />
+                    <div>
+                      <p className="font-bold mb-1">Mẹo xử lý bài nghe:</p>
+                      Hệ thống sẽ tự động nhóm các câu có cùng dòng chỉ dẫn (Instruction) "Listen..." lại với nhau để bạn chỉ cần dán link Audio 1 lần duy nhất cho cả nhóm.
                     </div>
                   </div>
                 </div>

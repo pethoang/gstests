@@ -8,7 +8,7 @@ import PreviewTab from './PreviewTab';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { ArrowLeft, CheckCircle, LogIn, Power, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle, LogIn, Power, Loader2, AlertTriangle } from 'lucide-react';
 
 export default function ExamPlayer() {
   const { examId } = useParams();
@@ -39,6 +39,7 @@ export default function ExamPlayer() {
   const [score, setScore] = useState(0);
 
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [cheatWarning, setCheatWarning] = useState<string | null>(null);
 
   useEffect(() => {
     if (hasStarted && timeLimit > 0 && !isSubmitted) {
@@ -215,14 +216,14 @@ export default function ExamPlayer() {
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        alert("CẢNH BÁO: BẠN VỪA CHUYỂN TAB HOẶC RỜI KHỎI MÀN HÌNH.\nHành động này đã được ghi nhận như một vi phạm.");
+        setCheatWarning("Bạn đã thoát chế độ Toàn màn hình hoặc chuyển sang Tab khác! Hệ thống đã ghi nhận hành vi này.");
         recordViolation('tab_switch', 'Học sinh chuyển tab hoặc ẩn trình duyệt');
       }
     };
 
     const handleCopyPaste = (e: ClipboardEvent) => {
       e.preventDefault();
-      alert("CẢNH BÁO: KHÔNG ĐƯỢC PHÉP SAO CHÉP HOẶC DÁN (COPY/PASTE).\nHành động của bạn đã được báo cáo cho giáo viên.");
+      setCheatWarning("KHÔNG ĐƯỢC PHÉP SAO CHÉP HOẶC DÁN (COPY/PASTE).\nHành động của bạn đã được báo cáo cho giáo viên.");
       recordViolation('copy_paste', 'Học sinh cố tình copy hoặc paste dữ liệu');
     };
 
@@ -232,7 +233,7 @@ export default function ExamPlayer() {
 
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement) {
-        alert("CẢNH BÁO: Bạn đã thoát chế độ Toàn màn hình.\nHành động này đã được ghi nhận.");
+        setCheatWarning("Bạn đã thoát chế độ Toàn màn hình hoặc chuyển sang Tab khác! Hệ thống đã ghi nhận hành vi này.");
         recordViolation('leave_fullscreen', 'Thu nhỏ màn hình');
       }
     };
@@ -336,20 +337,24 @@ export default function ExamPlayer() {
             // Don't fail the whole submission if leaderboard update fails
           }
 
-          // Award Badge if score > 50%
-          if (maxScore > 0 && totalScore / maxScore > 0.5) {
+          // Award Badge if score >= 50%
+          if (maxScore > 0 && totalScore / maxScore >= 0.5) {
             try {
               const studentStatsRef = doc(db, 'studentStats', user.email!.toLowerCase());
               const statsSnap = await getDoc(studentStatsRef);
+              
+              const isPerfectScore = totalScore === maxScore;
+              const badgesToAward = isPerfectScore ? 2 : 1;
+              
               if (statsSnap.exists()) {
                 await updateDoc(studentStatsRef, {
-                  badgeCount: increment(1),
+                  badgeCount: increment(badgesToAward),
                   updatedAt: new Date().toISOString()
                 });
               } else {
                 await setDoc(studentStatsRef, {
                   email: user.email!.toLowerCase(),
-                  badgeCount: 1,
+                  badgeCount: badgesToAward,
                   updatedAt: new Date().toISOString()
                 });
               }
@@ -558,6 +563,36 @@ export default function ExamPlayer() {
 
   return (
     <div className="min-h-screen bg-[#f0f2f5] font-sans relative">
+      {cheatWarning && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1a1c23] p-6">
+          <div className="max-w-md w-full flex flex-col items-center text-center animate-in fade-in zoom-in duration-300">
+            <div className="w-24 h-24 bg-red-500/20 rounded-full flex items-center justify-center mb-6">
+              <div className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(239,68,68,0.5)]">
+                <AlertTriangle className="w-10 h-10 text-white" />
+              </div>
+            </div>
+            <h2 className="text-4xl font-black mb-6 uppercase tracking-tight text-white drop-shadow-sm leading-tight">
+              Cảnh báo<br/>gian lận
+            </h2>
+            <p className="text-xl text-slate-200 mb-10 font-medium leading-relaxed">
+              {cheatWarning}
+            </p>
+            <button 
+              onClick={() => {
+                setCheatWarning(null);
+                // Try to go back to fullscreen to encourage them to stay
+                if (document.documentElement.requestFullscreen) {
+                  document.documentElement.requestFullscreen().catch(() => {});
+                }
+              }}
+              className="w-full py-4 bg-[#dc3545] hover:bg-[#c82333] text-white font-bold rounded-2xl text-xl uppercase tracking-wider transition-all duration-200 active:scale-[0.98] shadow-lg shadow-red-500/20"
+            >
+              Quay lại làm bài
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* FIXED STUDENT HEADER */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-white shadow-md z-50 px-4 md:px-8 flex items-center justify-between border-b border-slate-100">
         <button 

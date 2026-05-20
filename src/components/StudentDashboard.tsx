@@ -409,7 +409,7 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
            >
              <div className="flex items-center gap-2">
                <Award className="w-4 h-4" />
-               Bảng thành tích
+               Huy hiệu & Vinh danh
              </div>
              {activeTab === 'badges' && (
                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#0d9388] rounded-t-full" />

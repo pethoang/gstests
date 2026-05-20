@@ -28,6 +28,9 @@ export default function StudentBadgesTab({ badgeCount }: StudentBadgesTabProps) 
       <div className="text-center max-w-2xl mx-auto space-y-2">
         <h3 className="text-2xl font-black text-slate-800 tracking-tight">Bộ Sưu Tập Huy Hiệu</h3>
         <p className="text-slate-500">Hoàn thành bài tập với kết quả tốt để mở khóa thêm nhiều huy hiệu quý giá.</p>
+        <p className="text-xs text-slate-400 italic">
+          (Mẹo: Đạt từ 50% số điểm trở lên (+5.0) sẽ nhận được 1 huy hiệu. Riêng điểm 10 tuyệt đối sẽ được thưởng 2 huy hiệu!)
+        </p>
         <div className="pt-4 flex justify-center">
             <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-md shadow-sm">
                 <CustomBadgeIcon className="w-6 h-6" />
