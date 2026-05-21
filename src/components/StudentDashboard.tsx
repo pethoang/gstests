@@ -589,8 +589,6 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="text-sm text-black flex-wrap flex items-center gap-1 md:gap-2 justify-center md:justify-start">
             <span>&copy; 2026 - {new Date().getFullYear()} Hệ thống tạo đề & chấm điểm tự động.</span>
-            <span className="hidden sm:inline">&middot;</span>
-            <span>Một sản phẩm của <a href="https://globalsuccessfiles.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-700 hover:text-blue-800 transition-colors hover:underline">GlobalSuccessFiles.Com</a></span>
           </div>
           <div className="flex gap-6 text-sm text-black">
             <button onClick={() => setShowSupportModal(true)} className="hover:text-blue-600 transition-colors">Hỗ trợ</button>

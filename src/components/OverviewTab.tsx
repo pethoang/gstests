@@ -92,41 +92,77 @@ export default function OverviewTab() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-slate-200 shadow-sm">
-          <CardContent className="p-6 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">KHO ĐỀ THI</p>
-              <h3 className="text-4xl font-extrabold text-slate-800">{stats.exams}</h3>
+        {/* Card: Kho đề thi */}
+        <div className="relative overflow-hidden bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 group">
+          {/* Top highlight bar */}
+          <div className="absolute top-0 inset-x-0 h-[4px] bg-gradient-to-r from-blue-500 to-indigo-600" />
+          
+          <div className="p-6 flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">KHO ĐỀ THI</p>
+              <div className="flex items-baseline gap-1">
+                <h3 className="text-4xl font-extrabold text-slate-900 tracking-tight transition-transform group-hover:scale-105 duration-300">{stats.exams}</h3>
+                <span className="text-xs font-medium text-slate-400"> đề</span>
+              </div>
+              <p className="text-xs text-slate-500">Tài nguyên lưu trữ trực tuyến</p>
             </div>
-            <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-              <FileText className="w-7 h-7" />
+            
+            <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:bg-blue-100/80 shadow-sm border border-blue-100/50">
+              <FileText className="w-7 h-7 stroke-[2.25]" />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          
+          {/* Decorative background circle */}
+          <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-blue-500/5 rounded-full pointer-events-none" />
+        </div>
 
-        <Card className="border-slate-200 shadow-sm">
-          <CardContent className="p-6 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">LỚP HỌC</p>
-              <h3 className="text-4xl font-extrabold text-slate-800">{stats.classes}</h3>
+        {/* Card: Lớp học */}
+        <div className="relative overflow-hidden bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 group">
+          {/* Top highlight bar */}
+          <div className="absolute top-0 inset-x-0 h-[4px] bg-gradient-to-r from-emerald-500 to-teal-600" />
+          
+          <div className="p-6 flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">LỚP HỌC</p>
+              <div className="flex items-baseline gap-1">
+                <h3 className="text-4xl font-extrabold text-slate-900 tracking-tight transition-transform group-hover:scale-105 duration-300">{stats.classes}</h3>
+                <span className="text-xs font-medium text-slate-400"> lớp</span>
+              </div>
+              <p className="text-xs text-slate-500">Đang hoạt động & giao đề</p>
             </div>
-            <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
-              <Users className="w-7 h-7" />
+            
+            <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:bg-emerald-100/80 shadow-sm border border-emerald-100/50">
+              <Users className="w-7 h-7 stroke-[2.25]" />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          
+          {/* Decorative background circle */}
+          <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-emerald-500/5 rounded-full pointer-events-none" />
+        </div>
 
-        <Card className="border-slate-200 shadow-sm">
-          <CardContent className="p-6 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">LƯỢT THI</p>
-              <h3 className="text-4xl font-extrabold text-slate-800">{stats.submissions}</h3>
+        {/* Card: Lượt thi */}
+        <div className="relative overflow-hidden bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 group">
+          {/* Top highlight bar */}
+          <div className="absolute top-0 inset-x-0 h-[4px] bg-gradient-to-r from-purple-500 to-fuchsia-600" />
+          
+          <div className="p-6 flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">LƯỢT THI</p>
+              <div className="flex items-baseline gap-1">
+                <h3 className="text-4xl font-extrabold text-slate-900 tracking-tight transition-transform group-hover:scale-105 duration-300">{stats.submissions}</h3>
+                <span className="text-xs font-medium text-slate-400"> lượt</span>
+              </div>
+              <p className="text-xs text-slate-500">Hoàn thành nộp bài làm</p>
             </div>
-            <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
-              <CheckCircle className="w-7 h-7" />
+            
+            <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:bg-purple-100/80 shadow-sm border border-purple-100/50">
+              <CheckCircle className="w-7 h-7 stroke-[2.25]" />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          
+          {/* Decorative background circle */}
+          <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-purple-500/5 rounded-full pointer-events-none" />
+        </div>
       </div>
 
       {/* Features */}
@@ -134,45 +170,75 @@ export default function OverviewTab() {
         <h3 className="text-lg font-bold text-[#0d9388] text-center mb-6 uppercase tracking-wider">Các tính năng cơ bản</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-slate-200 shadow-sm h-full hover:shadow-md transition-shadow">
+          <Card className="bg-gradient-to-br from-blue-50/60 to-indigo-50/30 border-blue-100/80 shadow-sm h-full hover:shadow-md hover:border-blue-200/80 transition-all duration-300">
             <CardContent className="p-6 flex flex-col items-center text-center">
-              <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-blue-100/80 text-blue-600 rounded-xl flex items-center justify-center mb-4 shadow-sm border border-blue-200/40">
                 <Users className="w-6 h-6" />
               </div>
-              <h4 className="font-bold text-slate-800 mb-3 text-base">QUẢN LÍ CHUNG</h4>
-              <ul className="text-sm text-slate-600 space-y-2 text-left w-full pl-6 list-disc">
-                <li>Có 2 cấp độ: giáo viên/học sinh</li>
-                <li>Làm bài bằng tùy chọn tài khoản</li>
-                <li>Làm bài không cần đăng nhập (nếu mở)</li>
+              <h4 className="font-extrabold text-blue-900 mb-4 text-[15px] tracking-wide uppercase">QUẢN LÝ CHUNG</h4>
+              <ul className="text-sm text-slate-700 space-y-3.5 text-left w-full pl-1">
+                <li className="flex items-start gap-2.5">
+                  <span className="text-blue-500 font-bold text-base leading-none select-none">•</span>
+                  <span>Có 2 cấp độ phân quyền người dùng là giáo viên và học sinh rõ ràng.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="text-blue-500 font-bold text-base leading-none select-none">•</span>
+                  <span>Học sinh làm bài nộp trực tiếp bằng tùy chọn đa dạng tài khoản học tập.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="text-blue-500 font-bold text-base leading-none select-none">•</span>
+                  <span>Hỗ trợ làm bài tự do không cần đăng nhập nếu giáo viên mở cấu hình.</span>
+                </li>
               </ul>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200 shadow-sm h-full hover:shadow-md transition-shadow">
+          <Card className="bg-gradient-to-br from-emerald-50/60 to-teal-50/30 border-emerald-100/80 shadow-sm h-full hover:shadow-md hover:border-emerald-200/80 transition-all duration-300">
             <CardContent className="p-6 flex flex-col items-center text-center">
-              <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-emerald-100/80 text-emerald-600 rounded-xl flex items-center justify-center mb-4 shadow-sm border border-emerald-200/40">
                 <FileText className="w-6 h-6" />
               </div>
-              <h4 className="font-bold text-slate-800 mb-3 text-base">QUẢN LÍ ĐỀ THI</h4>
-              <ul className="text-sm text-slate-600 space-y-2 text-left w-full pl-6 list-disc">
-                <li>Kết hợp AI tự động tạo từ nội dung</li>
-                <li>Import đề nhanh từ văn bản</li>
-                <li>Tùy chỉnh cấu hình, thời gian làm bài</li>
-                <li>Mỗi đề có thể chia sẻ tiện lợi</li>
+              <h4 className="font-extrabold text-emerald-900 mb-4 text-[15px] tracking-wide uppercase">QUẢN LÝ ĐỀ THI</h4>
+              <ul className="text-sm text-slate-700 space-y-3.5 text-left w-full pl-1">
+                <li className="flex items-start gap-2.5">
+                  <span className="text-emerald-500 font-bold text-base leading-none select-none">•</span>
+                  <span>Kết hợp trí tuệ nhân tạo AI tự động tạo đề từ bất kỳ nội dung bài học.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="text-emerald-500 font-bold text-base leading-none select-none">•</span>
+                  <span>Import đề vô cùng nhanh chóng trực tiếp từ văn bản thô tiện lợi.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="text-emerald-500 font-bold text-base leading-none select-none">•</span>
+                  <span>Tự do tùy chỉnh cấu hình đề, thời gian làm và chấm điểm chi tiết.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="text-emerald-500 font-bold text-base leading-none select-none">•</span>
+                  <span>Mỗi đề thi được đóng gói chuyên nghiệp và chia sẻ link dễ dàng.</span>
+                </li>
               </ul>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200 shadow-sm h-full hover:shadow-md transition-shadow">
+          <Card className="bg-gradient-to-br from-purple-50/60 to-fuchsia-50/30 border-purple-100/80 shadow-sm h-full hover:shadow-md hover:border-purple-200/80 transition-all duration-300">
             <CardContent className="p-6 flex flex-col items-center text-center">
-              <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-purple-100/80 text-purple-600 rounded-xl flex items-center justify-center mb-4 shadow-sm border border-purple-200/40">
                 <CheckCircle className="w-6 h-6" />
               </div>
-              <h4 className="font-bold text-slate-800 mb-3 text-base">QUẢN LÍ KẾT QUẢ</h4>
-              <ul className="text-sm text-slate-600 space-y-2 text-left w-full pl-6 list-disc">
-                <li>Tính điểm nhanh chóng, tự động</li>
-                <li>Theo dõi tiến độ, bảng xếp hạng</li>
-                <li>Lưu trữ lịch sử, học sinh xem lại bài</li>
+              <h4 className="font-extrabold text-purple-900 mb-4 text-[15px] tracking-wide uppercase">QUẢN LÝ KẾT QUẢ</h4>
+              <ul className="text-sm text-slate-700 space-y-3.5 text-left w-full pl-1">
+                <li className="flex items-start gap-2.5">
+                  <span className="text-purple-500 font-bold text-base leading-none select-none">•</span>
+                  <span>Tính điểm thông minh, tự động phân loại đúng sai theo giây cực kỳ chính xác.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="text-purple-500 font-bold text-base leading-none select-none">•</span>
+                  <span>Theo dõi tiến độ, bảng tổng sắp thi đua học sinh (Leaderboard) trực quan.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="text-purple-500 font-bold text-base leading-none select-none">•</span>
+                  <span>Lưu trữ lịch sử bài kiểm tra trọn đời, học sinh dễ dàng xem lại lỗi sai để ôn tập.</span>
+                </li>
               </ul>
             </CardContent>
           </Card>

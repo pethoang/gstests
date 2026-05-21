@@ -413,6 +413,16 @@ export default function App() {
             <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold shrink-0">
               {user.displayName?.[0] || 'U'}
             </div>
+            {user.email === TEACHER_EMAIL && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setUserRole(null)} 
+                className="hidden sm:flex border-slate-200 ml-1"
+              >
+                Đổi vai trò
+              </Button>
+            )}
             <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50 ml-2 hidden sm:flex" onClick={() => auth.signOut()}>
               Đăng xuất
             </Button>
@@ -463,7 +473,7 @@ export default function App() {
             
           </nav>
 
-          <div className="p-4 border-t border-white/10 space-y-2">
+          <div className="h-[68px] flex items-center px-4 border-t border-white/10 shrink-0">
             <Button 
               size="sm" 
               className="w-full justify-start bg-orange-500 hover:bg-orange-600 text-white border-none shadow-sm transition-colors"
@@ -472,16 +482,6 @@ export default function App() {
               <RefreshCcw className="w-4 h-4 mr-2" />
               Làm mới dữ liệu năm học
             </Button>
-            {user.email === TEACHER_EMAIL && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="w-full justify-start text-white/60 hover:text-white hover:bg-white/10" 
-                onClick={() => setUserRole(null)}
-              >
-                Đổi vai trò
-              </Button>
-            )}
           </div>
         </aside>
 
@@ -576,8 +576,6 @@ export default function App() {
             <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="text-sm text-black flex-wrap flex items-center gap-1 md:gap-2 justify-center md:justify-start">
                 <span>&copy; 2026 - {new Date().getFullYear()} Hệ thống tạo đề & chấm điểm tự động.</span>
-                <span className="hidden sm:inline">&middot;</span>
-                <span>Một sản phẩm của <a href="https://globalsuccessfiles.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-700 hover:text-blue-800 transition-colors hover:underline">GlobalSuccessFiles.Com</a></span>
               </div>
               <div className="flex gap-4 text-sm text-black">
                 <button onClick={() => setShowSupportModal(true)} className="hover:text-blue-600 transition-colors">Hỗ trợ</button>
