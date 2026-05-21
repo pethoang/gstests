@@ -24,6 +24,7 @@ import { doc, getDoc, setDoc, collection, query, where, getDocs, writeBatch } fr
 import OverviewTab from './components/OverviewTab';
 import ViolationsTab from './components/ViolationsTab';
 import BadgesTab from './components/BadgesTab';
+import SupportModal from './components/SupportModal';
 
 type TabType = 'overview' | 'upload' | 'analysis' | 'edit' | 'preview' | 'results' | 'guidelines' | 'history' | 'classes' | 'violations' | 'badges';
 
@@ -58,6 +59,7 @@ export default function App() {
   // Reset data state
   const [isResetting, setIsResetting] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
+  const [showSupportModal, setShowSupportModal] = useState(false);
   const [statsKey, setStatsKey] = useState(0); // For forcing OverviewTab rerender
 
   useEffect(() => {
@@ -578,7 +580,7 @@ export default function App() {
                 <span>Một sản phẩm của <a href="https://globalsuccessfiles.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-700 hover:text-blue-800 transition-colors hover:underline">GlobalSuccessFiles.Com</a></span>
               </div>
               <div className="flex gap-4 text-sm text-black">
-                <button className="hover:text-blue-600 transition-colors">Hỗ trợ</button>
+                <button onClick={() => setShowSupportModal(true)} className="hover:text-blue-600 transition-colors">Hỗ trợ</button>
                 <button className="hover:text-blue-600 transition-colors">Hướng dẫn</button>
                 <button className="hover:text-blue-600 transition-colors">Phản hồi</button>
               </div>
@@ -626,6 +628,8 @@ export default function App() {
           </div>
         </div>
       )}
+
+      <SupportModal isOpen={showSupportModal} onClose={() => setShowSupportModal(false)} />
     </div>
   );
 }

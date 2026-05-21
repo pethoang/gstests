@@ -7,6 +7,7 @@ import { Button } from './ui/button';
 import { FileText, Clock, Play, GraduationCap, CheckCircle, Target, Trophy, Medal, BookOpen, AlertCircle, Award, Star } from 'lucide-react';
 import StudentBadgesTab from './StudentBadgesTab';
 import StudentLeaderboard from './StudentLeaderboard';
+import SupportModal from './SupportModal';
 
 interface StudentDashboardProps {
   user: User;
@@ -61,6 +62,7 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
   const [badgeCount, setBadgeCount] = useState(0);
   const [myRank, setMyRank] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showSupportModal, setShowSupportModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'pending' | 'completed' | 'badges'>('pending');
 
   useEffect(() => {
@@ -591,12 +593,13 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
             <span>Một sản phẩm của <a href="https://globalsuccessfiles.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-700 hover:text-blue-800 transition-colors hover:underline">GlobalSuccessFiles.Com</a></span>
           </div>
           <div className="flex gap-6 text-sm text-black">
-            <button className="hover:text-blue-600 transition-colors">Hỗ trợ</button>
+            <button onClick={() => setShowSupportModal(true)} className="hover:text-blue-600 transition-colors">Hỗ trợ</button>
             <button className="hover:text-blue-600 transition-colors">Hướng dẫn</button>
             <button className="hover:text-blue-600 transition-colors">Báo lỗi</button>
           </div>
         </div>
       </footer>
+      <SupportModal isOpen={showSupportModal} onClose={() => setShowSupportModal(false)} />
     </div>
   );
 }

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Sparkles, Search, UserCircle, Loader2 } from 'lucide-react';
+import { Sparkles, Search, UserCircle, Loader2, Download, MinusCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, increment } from 'firebase/firestore';
 
 interface StudentBadgeInfo {
   email: string;
@@ -17,8 +17,13 @@ export default function BadgesTab() {
   const [students, setStudents] = useState<StudentBadgeInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedClass, setSelectedClass] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  const [deductModal, setDeductModal] = useState<{ isOpen: boolean; email: string; currentBadges: number } | null>(null);
+  const [deductAmount, setDeductAmount] = useState<number>(1);
+  const [isDeducting, setIsDeducting] = useState(false);
 
   useEffect(() => {
     const fetchStudentBadges = async () => {
@@ -93,11 +98,15 @@ export default function BadgesTab() {
     fetchStudentBadges();
   }, []);
 
-  const filteredStudents = students.filter(s => 
-    s.email.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.classNames.some(cn => cn.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const allClasses = Array.from(new Set(students.flatMap(s => s.classNames))).sort();
+
+  const filteredStudents = students.filter(s => {
+    const matchesSearch = s.email.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.classNames.some(cn => cn.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesClass = selectedClass === 'all' || s.classNames.includes(selectedClass);
+    return matchesSearch && matchesClass;
+  });
 
   const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
   const paginatedStudents = filteredStudents.slice(
@@ -108,7 +117,53 @@ export default function BadgesTab() {
   // Reset page when searching
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, selectedClass]);
+
+  const exportToExcel = () => {
+    // We add BOM \uFEFF so Excel opens UTF-8 properly
+    const header = ['Học sinh', 'Email', 'Lớp', 'Tổng huy hiệu', 'Phân loại'].join(',');
+    const rows = filteredStudents.map(s => {
+       const classes = s.classNames.join('; ');
+       const rank = s.badgeCount >= 10 ? 'Vàng' : (s.badgeCount >= 5 ? 'Bạc' : (s.badgeCount >= 1 ? 'Đồng' : 'Chưa có'));
+       return `"${s.name || s.email}","${s.email}","${classes}","${s.badgeCount}","${rank}"`;
+    });
+    const csvContent = '\uFEFF' + [header, ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Danh_Sach_Huy_Hieu_${selectedClass === 'all' ? 'Tat_Ca' : selectedClass}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDeduct = async () => {
+    if (!deductModal) return;
+    const { email, currentBadges } = deductModal;
+    const amountToDeduct = Math.min(Math.max(1, deductAmount), currentBadges);
+    
+    setIsDeducting(true);
+    try {
+      const studentStatsRef = doc(db, 'studentStats', email.toLowerCase());
+      await updateDoc(studentStatsRef, {
+        badgeCount: increment(-amountToDeduct),
+        updatedAt: new Date().toISOString()
+      });
+      
+      setStudents(prev => prev.map(s => 
+        s.email === email 
+          ? { ...s, badgeCount: s.badgeCount - amountToDeduct } 
+          : s
+      ));
+      setDeductModal(null);
+      setDeductAmount(1);
+    } catch (error) {
+      console.error('Error deducting badges:', error);
+      alert('Không thể trừ huy hiệu. Vui lòng thử lại.');
+    } finally {
+      setIsDeducting(false);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -135,6 +190,23 @@ export default function BadgesTab() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <select
+                className="flex h-10 w-full sm:w-[180px] rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2"
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+              >
+                <option value="all">Tất cả các lớp</option>
+                {allClasses.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              
+              <Button onClick={exportToExcel} className="gap-2 shrink-0 bg-[#0d9388] hover:bg-[#0b7a71] text-white">
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Xuất Excel</span>
+              </Button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -144,21 +216,22 @@ export default function BadgesTab() {
                   <th className="px-6 py-4">Học sinh</th>
                   <th className="px-6 py-4">Lớp</th>
                   <th className="px-6 py-4 text-center">Tổng huy hiệu</th>
-                  <th className="px-6 py-4 text-right">Phân loại</th>
+                  <th className="px-6 py-4 text-center">Phân loại</th>
+                  <th className="px-6 py-4 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
                 {loading ? (
                   Array.from({ length: 3 }).map((_, i) => (
                     <tr key={i} className="animate-pulse">
-                      <td className="px-6 py-4" colSpan={4}>
+                      <td className="px-6 py-4" colSpan={5}>
                         <div className="h-10 bg-slate-100 rounded w-full"></div>
                       </td>
                     </tr>
                   ))
                 ) : paginatedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
+                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
                       <div className="flex flex-col items-center gap-2">
                         <UserCircle className="w-12 h-12 text-slate-200" />
                         <p>Không tìm thấy học sinh nào hoặc chưa có huy hiệu.</p>
@@ -194,7 +267,7 @@ export default function BadgesTab() {
                           {student.badgeCount}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-4 text-center">
                         {student.badgeCount >= 10 ? (
                           <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded uppercase border border-yellow-200">Vàng</span>
                         ) : student.badgeCount >= 5 ? (
@@ -204,6 +277,21 @@ export default function BadgesTab() {
                         ) : (
                           <span className="text-xs text-slate-300">Chưa có</span>
                         )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 gap-1.5 text-slate-600 hover:text-red-600 hover:border-red-200 hover:bg-red-50"
+                          onClick={() => {
+                            setDeductModal({ isOpen: true, email: student.email, currentBadges: student.badgeCount });
+                            setDeductAmount(1);
+                          }}
+                          disabled={student.badgeCount === 0}
+                        >
+                          <MinusCircle className="w-3.5 h-3.5" />
+                          Trừ/Quy đổi
+                        </Button>
                       </td>
                     </tr>
                   ))
@@ -239,6 +327,60 @@ export default function BadgesTab() {
           )}
         </CardContent>
       </Card>
+
+      {deductModal && deductModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="font-bold text-slate-800">Trừ / Quy đổi huy hiệu</h3>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-slate-600">
+                Thao tác với học sinh: <span className="font-semibold text-slate-900">{deductModal.email}</span>
+              </p>
+              <div className="flex items-center gap-2 text-sm bg-indigo-50 text-indigo-700 px-3 py-2 rounded-lg border border-indigo-100">
+                <Sparkles className="w-4 h-4 fill-indigo-500" />
+                Hiện có: <span className="font-bold">{deductModal.currentBadges}</span> huy hiệu
+              </div>
+              
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-slate-700">
+                  Số lượng cần trừ/quy đổi:
+                </label>
+                <Input 
+                  type="number" 
+                  min={1} 
+                  max={deductModal.currentBadges}
+                  value={deductAmount} 
+                  onChange={(e) => setDeductAmount(parseInt(e.target.value) || 1)}
+                  className="font-semibold"
+                />
+              </div>
+            </div>
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setDeductModal(null)} 
+                disabled={isDeducting}
+              >
+                Hủy
+              </Button>
+              <Button 
+                onClick={handleDeduct} 
+                disabled={isDeducting}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {isDeducting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Đang xử lý...
+                  </>
+                ) : 'Xác nhận trừ'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
