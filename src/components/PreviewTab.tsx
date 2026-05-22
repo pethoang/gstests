@@ -9,6 +9,20 @@ import { Copy, CheckCircle, Loader2, LayoutGrid, X, Clock } from 'lucide-react';
 import { renderFormattedText } from '../lib/formatter';
 import { cn } from '../lib/utils';
 
+export const getDirectGoogleDriveLink = (url: string) => {
+  if (!url) return '';
+  const match = url.match(/(?:\/d\/|id=)([a-zA-Z0-9_-]+)/);
+  if (match) {
+    return `https://lh3.googleusercontent.com/d/${match[1]}`;
+  }
+  return url;
+};
+
+export const stripOptionPrefix = (text: string): string => {
+  if (!text) return '';
+  return text.trim().replace(/^[A-Z]\s*[\.\)]\s*/i, '');
+};
+
 const GoogleDriveAudio = ({ url }: { url: string }) => {
   const [hasError, setHasError] = useState(false);
   
@@ -310,6 +324,18 @@ export default function PreviewTab({
                           </span>
                         </div>
                         
+                        {/* HÌNH ẢNH MINH HỌA CỦA CÂU HỎI */}
+                        {q.imageUrl && (
+                          <div className="my-3 max-w-md bg-slate-50 border border-slate-200 rounded-xl p-2.5 shadow-sm inline-flex flex-col items-center">
+                            <img 
+                              src={getDirectGoogleDriveLink(q.imageUrl)} 
+                              alt={`Question ${q.order} visual chart/illustration`} 
+                              className="max-h-[260px] w-auto h-auto object-contain rounded-lg"
+                              referrerPolicy="no-referrer"
+                            />
+                          </div>
+                        )}
+                        
                         <div className="pl-0 sm:pl-4 space-y-4">
                           {q.type === 'multiple_choice' && q.options && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -342,7 +368,9 @@ export default function PreviewTab({
                                         disabled={showCorrectAnswers}
                                       />
                                     </div>
-                                    <span className="ml-3 text-slate-700 leading-tight">{renderFormattedText(opt)}</span>
+                                    <span className="ml-3 text-slate-700 leading-tight">
+                                      {renderFormattedText(`${['A', 'B', 'C', 'D'][i] || String.fromCharCode(65 + i)}. ${stripOptionPrefix(opt)}`)}
+                                    </span>
                                   </label>
                                 )
                               })}

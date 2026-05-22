@@ -24,6 +24,8 @@ export interface Question {
   passage?: string; // For reading/listening context
   instructions?: string; // e.g. "Choose the best answers"
   audioUrl?: string; // Google Drive audio link
+  hasImage?: boolean; // Whether the question contains references to an image
+  imageUrl?: string; // Google Drive image link
   isManualGrading?: boolean;
 }
 

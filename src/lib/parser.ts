@@ -39,6 +39,8 @@ Tuân thủ nghiêm ngặt các quy tắc sau:
    - PHÂN LOẠI: Giữ đúng \`section\` là "Writing" nếu đề bài đặt nó ở mục đó, nhưng \`type\` vẫn là \`multiple_choice\`.
 
 11. GIỮ NGUYÊN ĐOẠN VĂN (PARAGRAPHS): Đối với các đoạn văn dài (Reading), bạn PHẢI giữ nguyên cấu trúc các đoạn văn của bản gốc bằng cách sử dụng các ký tự xuống dòng (\n). Tuyệt đối không gộp nhiều đoạn văn thành một khối văn bản duy nhất.
+12. CÂU HỎI CÓ HÌNH ẢNH (VISUAL QUESTIONS): Nếu nội dung hoặc chỉ dẫn câu hỏi nhắc tới biển báo, tranh vẽ, hình ảnh minh họa (ví dụ: "Look at the sign", "What does the sign say?", "Look at the picture", "nhìn hình/biển báo...", "Look at... and answer"), hãy gán thuộc tính \`hasImage\` là true.
+13. XỬ LÝ LAYOUT ĐA CỘT (MULTI-COLUMN LAYOUTS): Một số đề thi có thiết kế dạng hai cột song song (ví dụ: hình ảnh/bảng thông báo/biển quảng cáo ở bên trái và các câu hỏi hoặc các phương án lựa chọn A, B, C, D trắc nghiệm ở cột bên phải). Bạn phải phân tích cục bộ và chiết tách cẩn thận các phương án A, B, C, D này vào trường \`options\`, đổi loại câu hỏi thành \`multiple_choice\`. Tránh nhận diện lầm thành câu hỏi tự luận không có đáp án do bỏ sót dữ liệu cột bên phải.
 
 Các loại câu hỏi (type) hỗ trợ: 'multiple_choice', 'true_false', 'fill_blank', 'short_answer', 'writing', 'reading', 'listening', 'ordering'
 Đối với trắc nghiệm, 'options' phải chứa chính xác các chuỗi phản hồi ví dụ: ["A. go", "B. goes", "C. went", "D. going"]. Nếu biết đáp án đúng, hãy đưa vào 'correctAnswer' (ví dụ chuỗi 'B' hoặc 'goes').
@@ -76,6 +78,7 @@ Nếu đề không có ghi điểm số, mặc định cho 'points' là 0.25.`;
                   confidence: { type: Type.STRING, description: "Confidence in parsing this question correctly: 'high', 'medium', or 'low'" },
                   passage: { type: Type.STRING, description: "For reading questions, the reading passage text." },
                   instructions: { type: Type.STRING, description: "Instructions proceeding the question, like 'Choose the correct answer A, B, C or D...'." },
+                  hasImage: { type: Type.BOOLEAN, description: "Whether this question contains references to visual signs or illustrations needing an external image." },
                 },
                 required: ["id", "order", "section", "type", "content", "points", "confidence"]
               }

@@ -458,7 +458,8 @@ export default function App() {
                 }}
                 disabled={item.disabled}
                 className={cn(
-                  "flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200",
+                  "flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl font-medium transition-all duration-200",
+                  item.id === 'overview' ? "text-[14px]" : "text-sm",
                   activeTab === item.id
                     ? "bg-white text-[#0d9388] shadow-lg"
                     : item.disabled

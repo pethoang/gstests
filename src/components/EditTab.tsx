@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Plus, Trash2, GripVertical, Loader2, ArrowLeft, Users } from 'lucide-react';
+import { Save, Plus, Trash2, GripVertical, Loader2, ArrowLeft, Users, Image, FileImage } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -8,6 +8,7 @@ import { Label } from './ui/label';
 import { Question } from '../types';
 import { collection, addDoc, doc, updateDoc, getDocs, query, where, getDoc, deleteField } from 'firebase/firestore';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
+import { getDirectGoogleDriveLink } from './PreviewTab';
 
 interface EditTabProps {
   questions: Question[];
@@ -451,6 +452,70 @@ export default function EditTab({
                     rows={2}
                   />
                 </div>
+
+                {/* Chế độ chèn hình ảnh từ Google Drive cho câu hỏi */}
+                {q.hasImage ? (
+                  <div className="bg-orange-50/50 p-4 rounded-lg border border-orange-200/80 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-orange-800 font-semibold text-xs uppercase tracking-wider">
+                        <Image className="w-4 h-4 text-orange-600" />
+                        <span>Câu hỏi có hình ảnh/biển báo (AI nhận diện hoặc giáo viên chọn)</span>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-orange-700 hover:bg-orange-100 hover:text-orange-900 h-7 text-xs px-2"
+                        onClick={() => updateQuestion(q.id, { hasImage: false, imageUrl: '' })}
+                      >
+                        Bỏ chế độ hình ảnh
+                      </Button>
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-orange-800 font-medium block">
+                        Link hình ảnh Google Drive (Mở quyền "Bất kỳ ai có liên kết đều có thể xem"):
+                      </Label>
+                      <Input 
+                        value={q.imageUrl || ''} 
+                        onChange={(e) => updateQuestion(q.id, { imageUrl: e.target.value })}
+                        placeholder="https://drive.google.com/file/d/..."
+                        className="bg-white border-orange-200 text-slate-800 text-sm focus-visible:ring-orange-500"
+                      />
+                    </div>
+                    
+                    {q.imageUrl && (
+                      <div className="bg-white p-2 rounded border border-orange-100 text-xs text-slate-600 space-y-2">
+                        <div className="flex items-center gap-1.5 text-green-700 font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                          Đã thêm link ảnh. Hệ thống sẽ tự trực quan hóa link Drive này để học sinh nhìn thấy.
+                        </div>
+                        <div className="mt-1 border border-slate-100 rounded-md overflow-hidden bg-slate-50 p-1 max-w-xs mx-auto">
+                          <img 
+                            src={getDirectGoogleDriveLink(q.imageUrl)} 
+                            alt="Preview" 
+                            className="max-h-[120px] object-contain mx-auto rounded"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => {
+                              // Fallback silently if link loads failed
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex justify-end p-0">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1 h-7 py-0.5 px-2 bg-slate-50 hover:bg-slate-100 rounded-md"
+                      onClick={() => updateQuestion(q.id, { hasImage: true })}
+                    >
+                      <FileImage className="w-3.5 h-3.5" />
+                      Yêu cầu hình ảnh minh họa cho câu này
+                    </Button>
+                  </div>
+                )}
 
                 {q.type === 'multiple_choice' && (
                   <div>
