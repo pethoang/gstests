@@ -462,21 +462,23 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
                            {exam.title}
                         </h3>
                         
-                        <div className="flex items-center gap-2 text-sm text-slate-500 mb-6">
-                           <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-400">
-                             {exam.teacherName?.[0] || 'G'}
-                           </div>
-                           Giao bởi: <span className="font-medium text-slate-700">{exam.teacherName}</span>
+                        <div className="flex flex-col gap-2.5 mb-6">
+                          <div className="flex items-center gap-2 text-sm text-slate-500">
+                             <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-400">
+                               {exam.teacherName?.[0] || 'G'}
+                             </div>
+                             Giao bởi: <span className="font-medium text-slate-700">{exam.teacherName}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-slate-500 pl-1">
+                            <Clock className="w-4 h-4 text-slate-400" />
+                            Thời gian: <span className="font-medium text-slate-700">{exam.timeLimit > 0 ? `${exam.timeLimit} phút` : 'Không giới hạn'}</span>
+                          </div>
                         </div>
                         
-                        <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
-                          <div className="flex items-center text-sm font-medium text-slate-600 bg-slate-50 px-3 py-1.5 rounded-md border border-slate-200">
-                            <Clock className="w-4 h-4 mr-1.5 text-slate-400" />
-                            {exam.timeLimit > 0 ? `${exam.timeLimit} phút` : 'Không giới hạn'}
-                          </div>
+                        <div className="mt-auto pt-4 border-t border-slate-100">
                           <Button 
                              onClick={() => handleTakeExam(exam.id)} 
-                             className="bg-[#0d9388] hover:bg-[#0a7b72] shadow-none transition-all font-semibold rounded-md"
+                             className="w-full bg-[#0d9388] hover:bg-[#0a7b72] shadow-none transition-all font-semibold rounded-md py-4"
                           >
                             Làm bài <Play className="w-4 h-4 ml-1.5 fill-current" />
                           </Button>
