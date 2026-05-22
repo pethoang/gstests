@@ -115,6 +115,23 @@ export default function EditTab({
     setQuestions(questions.filter(q => q.id !== id));
   };
 
+  const handleAddQuestion = () => {
+    const newQuestionId = `q_custom_${Date.now()}`;
+    const newOrder = questions.length > 0 ? Math.max(...questions.map(q => q.order || 0)) + 1 : 1;
+    const newQuestion: Question = {
+      id: newQuestionId,
+      order: newOrder,
+      section: 'Vocabulary and Grammar',
+      type: 'multiple_choice',
+      content: 'Nội dung câu hỏi mới',
+      options: ['A. ', 'B. ', 'C. ', 'D. '],
+      correctAnswer: 'A',
+      points: 0.25,
+      confidence: 'high'
+    };
+    setQuestions([...questions, newQuestion]);
+  };
+
   const getShareLink = (id: string) => {
     let origin = window.location.origin;
     if (origin.includes('ais-dev-')) {
@@ -628,7 +645,11 @@ export default function EditTab({
           );
         })}
         
-        <Button variant="outline" className="w-full border-dashed border-2 py-8 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-300">
+        <Button 
+          onClick={handleAddQuestion}
+          variant="outline" 
+          className="w-full border-dashed border-2 py-8 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-300"
+        >
           <Plus className="w-5 h-5 mr-2" />
           Thêm câu hỏi mới
         </Button>
