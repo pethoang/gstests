@@ -79,13 +79,33 @@ export default function BadgesTab() {
           });
         }
 
-        // 3. Combine data
-        const combined = emails.map(email => ({
-          email,
-          name: studentMap[email].name,
-          classNames: studentMap[email].classes,
-          badgeCount: statsMap[email] || 0
-        })).sort((a, b) => b.badgeCount - a.badgeCount);
+        // 3. Fetch real student names from submissions under this teacher if any
+        const nameMap: Record<string, string> = {};
+        try {
+          const qSubmissions = query(collection(db, 'submissions'), where('teacherId', '==', user.uid));
+          const subSnap = await getDocs(qSubmissions);
+          subSnap.forEach(doc => {
+            const data = doc.data();
+            if (data.studentEmail && data.studentName) {
+              nameMap[data.studentEmail.toLowerCase()] = data.studentName;
+            }
+          });
+        } catch (subErr) {
+          console.error("Error fetching submissions for student names:", subErr);
+        }
+
+        // 4. Combine data
+        const combined = emails.map(email => {
+          const fallbackName = email.split('@')[0];
+          const capitalizedFallbackName = fallbackName.charAt(0).toUpperCase() + fallbackName.slice(1);
+          const name = nameMap[email] || capitalizedFallbackName || 'Học sinh';
+          return {
+            email,
+            name,
+            classNames: studentMap[email].classes,
+            badgeCount: statsMap[email] || 0
+          };
+        }).sort((a, b) => b.badgeCount - a.badgeCount);
 
         setStudents(combined);
       } catch (error) {
@@ -244,10 +264,10 @@ export default function BadgesTab() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold">
-                            {student.email[0].toUpperCase()}
+                            {(student.name || student.email)[0].toUpperCase()}
                           </div>
                           <div>
-                            <div className="font-semibold text-slate-900">{student.email}</div>
+                            <div className="font-semibold text-slate-900">{student.name}</div>
                             <div className="text-xs text-slate-500">{student.email}</div>
                           </div>
                         </div>
