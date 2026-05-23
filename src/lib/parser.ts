@@ -30,9 +30,15 @@ Tuân thủ nghiêm ngặt các quy tắc sau:
    - Tuyệt đối giữ đúng số thứ tự câu hỏi (Question number) như trong PDF (ví dụ: Q1, Q2... Q21, Q22). KHÔNG tự ý đánh số lại hoặc thay đổi thứ tự xuất hiện của các câu hỏi.
    - Nếu có một dòng yêu cầu chung, hãy đưa nó vào trường \`instructions\` của TẤT CẢ các câu hỏi thuộc nhóm đó.
 8. CÂU TRẢ LỜI NGẮN / VIẾT LẠI CÂU: Đối với các yêu cầu viết lại câu (Rewrite), hoàn thành câu, hãy ƯU TIÊN phân loại là 'short_answer'. KHÔNG sao chép các dòng kẻ "______" hay mũi tên "->" vào trong nội dung của câu hỏi, thay thế bằng \`___\`.
-9. BÀI ĐIỀN TỪ (CLOZE TEST): 
-   - Trong phần \`passage\`: Sử dụng số thứ tự trong ngoặc đơn, ví dụ: "The (11) of Australia...".
-   - Tách từng số thành một câu hỏi 'multiple_choice' riêng biệt. 
+9. BÀI ĐỌC ĐIỀN TỪ (CLOZE TEST / GAP FILLING / CLOZED TEXT):
+   - ĐÂY LÀ DẠNG BÀI ĐỌC ĐIỀN TỪ như ảnh/file mẫu.
+   - Trường \`instructions\` (Câu dẫn): Lấy chính xác câu hướng dẫn làm bài gốc từ đề thi (ví dụ: 'Read the following passage, then choose the correct answer to questions.' hoặc 'Read the following passage and mark the letter A, B, C, or D...'). Áp dụng chung câu này cho TẤT CẢ các câu hỏi của bài đọc này.
+   - Trường \`passage\` (Đoạn văn): Giữ nguyên vẹn toàn bộ đoạn văn đọc điền từ gốc (không bớt xén, không viết tóm tắt), bao gồm cả các ký tự xuống dòng (\\n) giữa các đoạn. Đối với các chỗ trống trong đoạn văn, bắt buộc biểu diễn bằng số thứ tự nằm trong ngoặc đơn kết hợp các dấu gạch dưới dài đại diện cho chỗ trống đó, ví dụ: '...is a small (21) _______________ shop...' hoặc '...It (22) _______________ sells...'. Giá trị số thứ tự này PHẢI trùng khớp hoàn toàn với số câu hỏi (\`order\`).
+   - Tách từng chỗ trống điền từ thành một câu hỏi riêng biệt thuộc loại \`'multiple_choice'\`.
+   - Trường \`content\` (Nội dung câu hỏi): Với dạng bài đọc điền từ này, đặt trường \`content\` là số câu nằm trong ngoặc đơn để học sinh dễ đối chiếu, ví dụ: \`"(21)"\`, \`"(22)"\`...
+   - Trường \`options\` (Lựa chọn đáp án): Chứa đúng 4 phương án lựa chọn tương ứng được in dưới/bên cạnh đoạn văn. Ví dụ cho câu 21: \`["A. retail", "B. mass", "C. wholesale", "D. convenient"]\`.
+   - Trường \`correctAnswer\` (Đáp án đúng): Chứa chuỗi phương án chính xác của câu hỏi đó (ví dụ: 'A' hoặc 'C').
+   - Nhóm câu hỏi thuộc bài điền từ này PHẢI có cùng nội dung đoạn văn trong trường \`passage\` và cùng câu dẫn trong trường \`instructions\` để hệ thống hiển thị đồng bộ chung một bài đọc khuyết. 
 10. TÌM LỖI SAI (ERROR IDENTIFICATION): Đây là dạng bài TRẮC NGHIỆM (multiple_choice). 
    - Trường \`content\`: Đưa toàn bộ câu văn vào. Sử dụng cú pháp \`__\` bao quanh chính xác các từ được gạch chân tương ứng với A, B, C, D.
    - Trường \`options\`: Chứa 4 từ/cụm từ bị sai tương ứng với A, B, C, D.
@@ -48,7 +54,7 @@ Các loại câu hỏi (type) hỗ trợ: 'multiple_choice', 'true_false', 'fill
 Nếu đề không có ghi điểm số, mặc định cho 'points' là 0.25.`;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-3.5-flash',
           contents: [
             prompt,
             {

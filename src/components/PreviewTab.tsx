@@ -318,7 +318,9 @@ export default function PreviewTab({
                       <div key={`${q.id}-${qIndex}`} id={`question-${q.id}`} className="space-y-4 scroll-m-24">
                         <div className="text-slate-900 leading-relaxed">
                           <span className="font-bold mr-2">Question {q.order}.</span>
-                          <span className="text-base">{renderFormattedText(q.content)}</span>
+                          {q.content && q.content.trim() !== `(${q.order})` && q.content.trim() !== `${q.order}` && q.content.trim() !== `${q.order}.` && (
+                            <span className="text-base">{renderFormattedText(q.content)}</span>
+                          )}
                           <span className="ml-2 text-xs text-slate-400 whitespace-nowrap">
                             [{q.points} pt{q.points !== 1 ? 's' : ''}]
                           </span>

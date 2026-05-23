@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { FileUp, FileText, Edit3, Eye, Users, FileType, CheckCircle, Library, LogIn, Menu, X, LayoutDashboard, ShieldAlert, RefreshCcw, AlertTriangle, GraduationCap, Sparkles } from 'lucide-react';
+import { FileUp, FileText, Edit3, Eye, Users, FileType, CheckCircle, Library, LogIn, Menu, X, LayoutDashboard, ShieldAlert, RefreshCcw, AlertTriangle, GraduationCap, Sparkles, Brain } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Button } from './components/ui/button';
 import { Question, Grade, ExamType } from './types';

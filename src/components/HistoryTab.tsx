@@ -3,9 +3,10 @@ import { collection, getDocs, query, orderBy, limit, doc, deleteDoc, where, upda
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Button } from './ui/button';
-import { Loader2, Calendar, FileEdit, Users, Trash2, Send, X } from 'lucide-react';
+import { Loader2, Calendar, FileEdit, Users, Trash2, Send, X, Brain } from 'lucide-react';
 import { Question, Grade, ExamType } from '../types';
 import ResultsTab from './ResultsTab';
+import SmarterAnalyticsTab from './SmarterAnalyticsTab';
 
 interface ExamRecord {
   id: string;
@@ -47,6 +48,7 @@ export default function HistoryTab({ onEditExam }: HistoryTabProps) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [examToDelete, setExamToDelete] = useState<string | null>(null);
   const [viewResultExamId, setViewResultExamId] = useState<string | null>(null);
+  const [viewAnalyticsExamId, setViewAnalyticsExamId] = useState<string | null>(null);
   const [filterGrade, setFilterGrade] = useState<Grade | 'all'>('all');
   const [filterType, setFilterType] = useState<ExamType | 'all'>('all');
 
@@ -215,6 +217,15 @@ export default function HistoryTab({ onEditExam }: HistoryTabProps) {
     );
   }
 
+  if (viewAnalyticsExamId) {
+    return (
+      <SmarterAnalyticsTab 
+        examId={viewAnalyticsExamId} 
+        onBack={() => setViewAnalyticsExamId(null)} 
+      />
+    );
+  }
+
   const filteredExams = exams.filter(exam => {
     const matchGrade = filterGrade === 'all' || exam.grade === filterGrade;
     const matchType = filterType === 'all' || exam.examType === filterType;
@@ -306,44 +317,59 @@ export default function HistoryTab({ onEditExam }: HistoryTabProps) {
                       <span>{exam.timeLimit > 0 ? `${exam.timeLimit} phút` : 'Không giới hạn thời gian'}</span>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto mt-4 sm:mt-0">
-                    <Button 
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onEditExam(exam.id, exam.questions, exam.title, exam.timeLimit, exam.allowRetake, exam.startTime, exam.endTime, exam.grade, exam.examType)}
-                    >
-                      <FileEdit className="w-4 h-4 mr-2" /> Sửa đề
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      size="sm"
-                      className="text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:text-amber-800"
-                      onClick={() => setViewResultExamId(exam.id)}
-                    >
-                      <Users className="w-4 h-4 mr-2" /> Xem điểm
-                    </Button>
-                    <Button 
-                      variant={(exam.assignedClassIds && exam.assignedClassIds.length > 0) ? "default" : "outline"}
-                      size="sm"
-                      className={!exam.assignedClassIds || exam.assignedClassIds.length === 0 ? "bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700" : "bg-blue-600 hover:bg-blue-700 text-white"}
-                      onClick={() => openAssignModal(exam)}
-                    >
-                      <Send className="w-4 h-4 mr-2" /> {exam.assignedClassIds && exam.assignedClassIds.length > 0 ? 'Đã giao' : 'Giao bài'}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-red-700 bg-red-50 border-red-200 hover:bg-red-100 hover:text-red-800"
-                      onClick={() => confirmDelete(exam.id)}
-                      disabled={isDeleting === exam.id}
-                    >
-                      {isDeleting === exam.id ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-4 h-4 mr-2" />
-                      )}
-                      Xoá đề
-                    </Button>
+                  <div className="flex flex-col items-end gap-2.5 w-full sm:w-auto mt-4 sm:mt-0 shrink-0">
+                    {/* Hàng 1: 3 nút đầu */}
+                    <div className="flex items-center gap-2 justify-end w-full sm:w-auto">
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onEditExam(exam.id, exam.questions, exam.title, exam.timeLimit, exam.allowRetake, exam.startTime, exam.endTime, exam.grade, exam.examType)}
+                      >
+                        <FileEdit className="w-4 h-4 mr-2" /> Sửa đề
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        className="text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:text-amber-800 font-medium"
+                        onClick={() => setViewResultExamId(exam.id)}
+                      >
+                        <Users className="w-4 h-4 mr-2" /> Xem điểm
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        className="text-indigo-700 bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:text-indigo-800 font-medium"
+                        onClick={() => setViewAnalyticsExamId(exam.id)}
+                      >
+                        <Brain className="w-4 h-4 mr-2" /> Phân tích bẫy
+                      </Button>
+                    </div>
+
+                    {/* Hàng 2: 2 nút sau */}
+                    <div className="flex items-center gap-2 justify-end w-full sm:w-auto">
+                      <Button 
+                        variant={(exam.assignedClassIds && exam.assignedClassIds.length > 0) ? "default" : "outline"}
+                        size="sm"
+                        className={!exam.assignedClassIds || exam.assignedClassIds.length === 0 ? "bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 font-medium" : "bg-blue-600 hover:bg-blue-700 text-white font-medium"}
+                        onClick={() => openAssignModal(exam)}
+                      >
+                        <Send className="w-4 h-4 mr-2" /> {exam.assignedClassIds && exam.assignedClassIds.length > 0 ? 'Đã giao' : 'Giao bài'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-700 bg-red-50 border-red-200 hover:bg-red-100 hover:text-red-800 font-medium"
+                        onClick={() => confirmDelete(exam.id)}
+                        disabled={isDeleting === exam.id}
+                      >
+                        {isDeleting === exam.id ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4 mr-2" />
+                        )}
+                        Xoá đề
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
