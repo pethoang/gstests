@@ -67,7 +67,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             {/* Logo Area */}
             <div className="mb-6">
               <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight mb-4 uppercase italic">
-                GLobal Success Tests LMS
+                GLobal Success Tests HUB
               </h1>
               <div className="relative inline-block mt-1">
                 <div className="bg-[#0b867c] text-white p-3.5 rounded-full inline-flex items-center justify-center shadow-md ring-6 ring-[#0fa599]/10 mb-1">
