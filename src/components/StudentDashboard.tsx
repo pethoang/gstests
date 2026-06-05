@@ -210,7 +210,7 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
         <div className="w-10 h-10 border-4 border-[#0d9388]/30 border-t-[#0d9388] rounded-full animate-spin"></div>
-        <p className="text-slate-500 font-medium animate-pulse">Đang tải GLobal Success Tests HUB...</p>
+        <p className="text-slate-500 font-medium animate-pulse">Đang tải Global Success Tests HUB...</p>
       </div>
     );
   }
@@ -233,7 +233,7 @@ export default function StudentDashboard({ user, onLogout, onSwitchRole }: Stude
             <div className="bg-[#0d9388] p-2 rounded-xl text-white shadow-sm ring-4 ring-[#0d9388]/10">
               <GraduationCap className="w-5 h-5" />
             </div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight hidden sm:block">GLobal Success Tests HUB</h1>
+            <h1 className="text-xl font-bold text-slate-800 tracking-tight hidden sm:block">Global Success Tests HUB</h1>
           </div>
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="flex items-center gap-2 bg-slate-100/80 py-1.5 px-3 rounded-full border border-slate-200 shrink-0">

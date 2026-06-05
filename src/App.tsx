@@ -396,7 +396,7 @@ export default function App() {
           <div className="bg-[#0d9388] p-1.5 rounded-lg text-white">
             <FileText className="w-5 h-5" />
           </div>
-          <h1 className="font-bold text-slate-900 tracking-tight text-lg hidden sm:block">GLobal Success Tests HUB</h1>
+          <h1 className="font-bold text-slate-900 tracking-tight text-lg hidden sm:block">Global Success Tests HUB</h1>
         </div>
         <div className="flex items-center gap-4">
           {isTestPublished && (
