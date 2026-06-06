@@ -477,11 +477,11 @@ export default function App() {
           <div className="h-[68px] flex items-center px-4 border-t border-white/10 shrink-0">
             <Button 
               size="sm" 
-              className="w-full justify-start bg-orange-500 hover:bg-orange-600 text-white border-none shadow-sm transition-colors"
+              className="w-full justify-start h-11 bg-red-600 hover:bg-red-700 text-white border-none shadow-sm transition-colors font-semibold"
               onClick={() => setShowResetModal(true)}
             >
               <RefreshCcw className="w-4 h-4 mr-2" />
-              Làm mới dữ liệu năm học
+              LÀM MỚI DỮ LIỆU NĂM HỌC
             </Button>
           </div>
         </aside>
