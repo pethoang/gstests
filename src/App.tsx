@@ -580,7 +580,7 @@ export default function App() {
               </div>
               <div className="flex gap-4 text-sm text-black">
                 <button onClick={() => setShowSupportModal(true)} className="hover:text-blue-600 transition-colors">Hỗ trợ</button>
-                <button className="hover:text-blue-600 transition-colors">Hướng dẫn</button>
+                <button onClick={() => setActiveTab('guidelines')} className="hover:text-blue-600 transition-colors">Hướng dẫn</button>
                 <button className="hover:text-blue-600 transition-colors">Phản hồi</button>
               </div>
             </div>
