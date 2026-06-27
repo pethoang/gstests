@@ -579,8 +579,8 @@ export default function App() {
                 <span>&copy; 2026 - {new Date().getFullYear()} Hệ thống tạo đề & chấm điểm tự động.</span>
               </div>
               <div className="flex gap-4 text-sm text-black">
-                <button onClick={() => setShowSupportModal(true)} className="hover:text-blue-600 transition-colors">Hỗ trợ</button>
-                <button onClick={() => setActiveTab('guidelines')} className="hover:text-blue-600 transition-colors">Hướng dẫn</button>
+                <button onClick={() => setShowSupportModal(true)} className="hover:text-blue-600 transition-colors cursor-pointer">Hỗ trợ</button>
+                <button onClick={() => setActiveTab('guidelines')} className="hover:text-blue-600 transition-colors cursor-pointer">Hướng dẫn</button>
                 <a href="https://zalo.me/0913885221" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">Phản hồi</a>
               </div>
             </div>
