@@ -13,11 +13,16 @@ export default function OverviewTab() {
     classes: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [teacherName, setTeacherName] = useState('GIÁO VIÊN');
 
   useEffect(() => {
     const fetchStats = async () => {
       const user = auth.currentUser;
       if (!user) return;
+
+      if (user.displayName) {
+        setTeacherName(user.displayName);
+      }
 
       try {
         // Fetch exams count
@@ -80,7 +85,7 @@ export default function OverviewTab() {
             </span>
           </div>
 
-          <p className="text-lg">Chào mừng <span className="font-bold text-yellow-300">GIÁO VIÊN</span> đã trở lại</p>
+          <p className="text-lg">Chào mừng <span className="font-bold text-yellow-300">{teacherName}</span> đã trở lại</p>
           <p className="text-blue-100 mt-2 max-w-xl">
             Bạn có <span className="font-bold text-white">{stats.exams}</span> đề thi đang lưu trữ trong kho dữ liệu.
           </p>
