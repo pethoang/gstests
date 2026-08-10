@@ -79,16 +79,33 @@ export default function ResultsTab({ examId, onBack }: ResultsTabProps) {
           orderBy('score', 'desc')
         );
         const querySnapshot = await getDocs(q);
-        const fetched: Submission[] = [];
+        const submissionMap = new Map<string, Submission>();
         querySnapshot.forEach((doc) => {
-          fetched.push({ id: doc.id, ...doc.data() } as Submission);
+          const sub = { id: doc.id, ...doc.data() } as Submission;
+          const key = (sub.studentEmail && sub.studentEmail.trim()) 
+            ? sub.studentEmail.toLowerCase().trim() 
+            : (sub.studentName ? sub.studentName.toLowerCase().trim() : sub.id);
+          
+          const existing = submissionMap.get(key);
+          if (!existing) {
+            submissionMap.set(key, sub);
+          } else {
+            const existingTime = new Date(existing.submittedAt || 0).getTime();
+            const currentTime = new Date(sub.submittedAt || 0).getTime();
+            if (currentTime > existingTime) {
+              submissionMap.set(key, sub);
+            }
+          }
         });
-        setSubmissions(fetched);
+
+        const deduplicated = Array.from(submissionMap.values());
+        deduplicated.sort((a, b) => b.score - a.score);
+        setSubmissions(deduplicated);
 
         // Fetch Stats for these students safely
         const emails = Array.from(
           new Set(
-            fetched
+            deduplicated
               .map(s => (s.studentEmail || '').toLowerCase())
               .filter(Boolean)
           )

@@ -296,8 +296,10 @@ export default function ExamPlayer() {
 
     try {
       if (examId && teacherId) {
-        // Only save results if the exam is restricted (not 'Tất cả')
-        if (allowedEmails && allowedEmails.length > 0) {
+        const isMandatory = (allowedEmails && allowedEmails.length > 0) || (assignedClassIds && assignedClassIds.length > 0);
+
+        // Only save submission & update leaderboard if it is a mandatory/assigned exam
+        if (isMandatory) {
           await addDoc(collection(db, 'submissions'), {
             examId,
             teacherId,
@@ -334,33 +336,32 @@ export default function ExamPlayer() {
             }
           } catch (lbErr) {
             console.error("Error updating leaderboard: ", lbErr);
-            // Don't fail the whole submission if leaderboard update fails
           }
+        }
 
-          // Award Badge if score >= 50%
-          if (maxScore > 0 && totalScore / maxScore >= 0.5) {
-            try {
-              const studentStatsRef = doc(db, 'studentStats', user.email!.toLowerCase());
-              const statsSnap = await getDoc(studentStatsRef);
-              
-              const isPerfectScore = totalScore === maxScore;
-              const badgesToAward = isPerfectScore ? 2 : 1;
-              
-              if (statsSnap.exists()) {
-                await updateDoc(studentStatsRef, {
-                  badgeCount: increment(badgesToAward),
-                  updatedAt: new Date().toISOString()
-                });
-              } else {
-                await setDoc(studentStatsRef, {
-                  email: user.email!.toLowerCase(),
-                  badgeCount: badgesToAward,
-                  updatedAt: new Date().toISOString()
-                });
-              }
-            } catch (badgeErr) {
-              console.error("Error awarding badge:", badgeErr);
+        // Award Badge if score >= 50% (For BOTH mandatory and practice exams!)
+        if (maxScore > 0 && totalScore / maxScore >= 0.5 && user.email) {
+          try {
+            const studentStatsRef = doc(db, 'studentStats', user.email.toLowerCase());
+            const statsSnap = await getDoc(studentStatsRef);
+            
+            const isPerfectScore = totalScore === maxScore;
+            const badgesToAward = isPerfectScore ? 2 : 1;
+            
+            if (statsSnap.exists()) {
+              await updateDoc(studentStatsRef, {
+                badgeCount: increment(badgesToAward),
+                updatedAt: new Date().toISOString()
+              });
+            } else {
+              await setDoc(studentStatsRef, {
+                email: user.email.toLowerCase(),
+                badgeCount: badgesToAward,
+                updatedAt: new Date().toISOString()
+              });
             }
+          } catch (badgeErr) {
+            console.error("Error awarding badge: ", badgeErr);
           }
         }
       }
