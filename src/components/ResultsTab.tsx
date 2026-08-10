@@ -85,8 +85,14 @@ export default function ResultsTab({ examId, onBack }: ResultsTabProps) {
         });
         setSubmissions(fetched);
 
-        // Fetch Stats for these students
-        const emails = Array.from(new Set(fetched.map(s => s.studentEmail.toLowerCase())));
+        // Fetch Stats for these students safely
+        const emails = Array.from(
+          new Set(
+            fetched
+              .map(s => (s.studentEmail || '').toLowerCase())
+              .filter(Boolean)
+          )
+        );
         if (emails.length > 0) {
           const statsMap: Record<string, number> = {};
           for (let i = 0; i < emails.length; i += 30) {
@@ -94,7 +100,10 @@ export default function ResultsTab({ examId, onBack }: ResultsTabProps) {
             const qStats = query(collection(db, 'studentStats'), where('email', 'in', chunk));
             const statsSnap = await getDocs(qStats);
             statsSnap.forEach(doc => {
-              statsMap[doc.data().email.toLowerCase()] = doc.data().badgeCount || 0;
+              const emailData = doc.data().email;
+              if (emailData) {
+                statsMap[emailData.toLowerCase()] = doc.data().badgeCount || 0;
+              }
             });
           }
           setStudentStats(statsMap);
@@ -316,25 +325,28 @@ export default function ResultsTab({ examId, onBack }: ResultsTabProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
-              {paginatedSubmissions.map((sub, i) => (
-                <tr key={i} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <UserCircle className="w-8 h-8 text-slate-400" />
-                      <div>
-                        <div className="flex items-center gap-2">
-                           <span className="font-semibold text-slate-900 block">{sub.studentName}</span>
-                           {(studentStats[sub.studentEmail.toLowerCase()] || 0) > 0 && (
-                             <div className="flex items-center gap-0.5 bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-full border border-indigo-100 text-[10px] font-bold" title={`${studentStats[sub.studentEmail.toLowerCase()]} Huy hiệu`}>
-                               <Sparkles className="w-2.5 h-2.5 fill-indigo-500" />
-                               {studentStats[sub.studentEmail.toLowerCase()]}
-                             </div>
-                           )}
+              {paginatedSubmissions.map((sub, i) => {
+                const studentEmailLower = (sub.studentEmail || '').toLowerCase();
+                const badgeCount = studentEmailLower ? (studentStats[studentEmailLower] || 0) : 0;
+                return (
+                  <tr key={i} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <UserCircle className="w-8 h-8 text-slate-400" />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-900 block">{sub.studentName}</span>
+                            {badgeCount > 0 && (
+                              <div className="flex items-center gap-0.5 bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-full border border-indigo-100 text-[10px] font-bold" title={`${badgeCount} Huy hiệu`}>
+                                <Sparkles className="w-2.5 h-2.5 fill-indigo-500" />
+                                {badgeCount}
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-xs text-slate-500">{sub.studentEmail || 'Không có email'}</span>
                         </div>
-                        <span className="text-xs text-slate-500">{sub.studentEmail}</span>
                       </div>
-                    </div>
-                  </td>
+                    </td>
                   <td className="px-6 py-4">
                     <span className="font-bold text-lg text-slate-900">{sub.score.toFixed(2)}</span>
                     <span className="text-slate-500">/{sub.maxScore}</span>
@@ -352,7 +364,8 @@ export default function ResultsTab({ examId, onBack }: ResultsTabProps) {
                     <Button variant="ghost" size="sm" className="text-blue-600 font-medium">Xem chi tiết</Button>
                   </td>
                 </tr>
-              ))}
+              );
+            })}
             </tbody>
           </table>
           )}
