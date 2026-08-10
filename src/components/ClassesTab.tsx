@@ -455,9 +455,6 @@ export default function ClassesTab() {
                     <div className="p-5 pb-4 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 via-white to-slate-50/50">
                       <div className="flex justify-between items-start gap-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-11 h-11 rounded-xl bg-blue-100/70 text-blue-700 flex items-center justify-center font-black text-lg shrink-0 border border-blue-200/50 shadow-inner">
-                            {cls.name.charAt(0).toUpperCase()}
-                          </div>
                           <div>
                             <div className="flex items-center gap-2">
                               <h3 className="font-extrabold text-slate-900 text-lg group-hover:text-blue-600 transition-colors">
@@ -646,13 +643,8 @@ export default function ClassesTab() {
                   const badge = getGradeBadge(cls.name);
                   return (
                     <tr key={cls.id} className="hover:bg-blue-50/30 transition-colors">
-                      <td className="px-6 py-4 font-extrabold text-slate-900">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-black text-xs shrink-0">
-                            {cls.name.charAt(0).toUpperCase()}
-                          </div>
-                          <span>{cls.name}</span>
-                        </div>
+                      <td className="px-6 py-4 font-extrabold text-slate-900 text-base">
+                        <span>{cls.name}</span>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badge.color}`}>
