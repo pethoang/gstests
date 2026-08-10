@@ -52,6 +52,14 @@ export default function HistoryTab({ onEditExam }: HistoryTabProps) {
   const [filterGrade, setFilterGrade] = useState<Grade | 'all'>('all');
   const [filterType, setFilterType] = useState<ExamType | 'all'>('all');
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterGrade, filterType]);
+
   // Assignment Modal States
   const [examToAssign, setExamToAssign] = useState<string | null>(null);
   const [teacherClasses, setTeacherClasses] = useState<ClassData[]>([]);
@@ -232,6 +240,12 @@ export default function HistoryTab({ onEditExam }: HistoryTabProps) {
     return matchGrade && matchType;
   });
 
+  const totalPages = Math.ceil(filteredExams.length / itemsPerPage);
+  const paginatedExams = filteredExams.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -288,7 +302,7 @@ export default function HistoryTab({ onEditExam }: HistoryTabProps) {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {filteredExams.map((exam) => (
+          {paginatedExams.map((exam) => (
             <Card key={exam.id} className="overflow-hidden hover:border-blue-200 transition-colors">
               <CardContent className="p-0">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center p-6 gap-4 border-b border-slate-100">
@@ -375,6 +389,46 @@ export default function HistoryTab({ onEditExam }: HistoryTabProps) {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {!loading && filteredExams.length > itemsPerPage && (
+        <div className="px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 border border-slate-200 bg-white rounded-lg shadow-sm">
+          <p className="text-sm text-slate-500">
+            Hiển thị <span className="font-medium text-slate-700">{(currentPage - 1) * itemsPerPage + 1}</span> đến <span className="font-medium text-slate-700">{Math.min(currentPage * itemsPerPage, filteredExams.length)}</span> trong tổng số <span className="font-medium text-slate-700">{filteredExams.length}</span> đề thi
+          </p>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => prev - 1)}
+            >
+              Trang trước
+            </Button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  size="sm"
+                  className="w-8 h-8 p-0"
+                  onClick={() => setCurrentPage(pageNum)}
+                >
+                  {pageNum}
+                </Button>
+              ))}
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => prev + 1)}
+            >
+              Trang sau
+            </Button>
+          </div>
         </div>
       )}
 
