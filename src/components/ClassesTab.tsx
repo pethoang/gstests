@@ -24,7 +24,7 @@ export default function ClassesTab() {
   const [classes, setClasses] = useState<ClassData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   
   // Create / Edit modal states
   const [isCreating, setIsCreating] = useState(false);
