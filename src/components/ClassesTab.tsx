@@ -109,6 +109,9 @@ export default function ClassesTab() {
     setEditingId(cls.id);
     setEditName(cls.name);
     setEditEmailsStr(cls.studentEmails.join('\n'));
+    if (viewMode === 'table') {
+      setViewMode('grid');
+    }
   };
 
   const handleSaveEdit = async () => {
@@ -667,24 +670,46 @@ export default function ClassesTab() {
                         {new Date(cls.createdAt).toLocaleDateString('vi-VN')}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 px-2 text-blue-600 hover:bg-blue-50 font-semibold text-xs"
-                            onClick={() => startEdit(cls)}
-                          >
-                            <Edit3 className="w-3.5 h-3.5 mr-1" /> Sửa
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 px-2 text-red-600 hover:bg-red-50 font-semibold text-xs"
-                            onClick={() => setDeleteConfirmId(cls.id)}
-                          >
-                            <Trash2 className="w-3.5 h-3.5 mr-1" /> Xóa
-                          </Button>
-                        </div>
+                        {deleteConfirmId === cls.id ? (
+                          <div className="flex items-center justify-end gap-1.5 bg-red-50 p-1 rounded-lg border border-red-200 animate-in fade-in">
+                            <span className="text-xs font-bold text-red-600 px-1">Xóa lớp?</span>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 px-2 text-xs text-slate-600 hover:bg-slate-200" 
+                              onClick={() => setDeleteConfirmId(null)}
+                            >
+                              Hủy
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              size="sm" 
+                              className="h-6 px-2 text-xs font-bold bg-red-600 hover:bg-red-700 text-white" 
+                              onClick={() => handleDelete(cls.id)}
+                            >
+                              Xác nhận
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-end gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 px-2 text-blue-600 hover:bg-blue-50 font-semibold text-xs"
+                              onClick={() => startEdit(cls)}
+                            >
+                              <Edit3 className="w-3.5 h-3.5 mr-1" /> Sửa
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 px-2 text-red-600 hover:bg-red-50 font-semibold text-xs"
+                              onClick={() => setDeleteConfirmId(cls.id)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5 mr-1" /> Xóa
+                            </Button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );
