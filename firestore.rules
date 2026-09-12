@@ -158,7 +158,7 @@ service cloud.firestore {
                        get(/databases/$(database)/documents/exams/$(incoming().examId)).data.ownerId == incoming().teacherId;
                        
       allow update: if false; 
-      allow delete: if false; 
+      allow delete: if isSignedIn() && existing().teacherId == request.auth.uid; 
     }
 
     match /violations/{violationId} {
@@ -171,13 +171,14 @@ service cloud.firestore {
                        exists(/databases/$(database)/documents/exams/$(incoming().examId)) &&
                        get(/databases/$(database)/documents/exams/$(incoming().examId)).data.ownerId == incoming().teacherId;
       allow update: if false;
-      allow delete: if false;
+      allow delete: if isSignedIn() && existing().teacherId == request.auth.uid;
     }
 
     match /leaderboards/{docId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && incoming().studentId == request.auth.uid;
       allow update: if isSignedIn() && existing().studentId == request.auth.uid;
+      allow delete: if isSignedIn();
     }
 
     match /studentStats/{email} {
@@ -185,6 +186,7 @@ service cloud.firestore {
       allow list: if isSignedIn(); 
       allow create: if isSignedIn() && request.auth.token.email.lower() == email.lower() && isValidStudentStats(incoming());
       allow update: if isSignedIn() && request.auth.token.email.lower() == email.lower() && isValidStudentStats(incoming()) && incoming().email == existing().email;
+      allow delete: if isSignedIn();
     }
   }
 }

@@ -269,9 +269,9 @@ export default function App() {
       setStatsKey(prev => prev + 1); // trigger refresh
       setShowResetModal(false);
       alert('Đã làm mới dữ liệu thành công! Tất cả điểm số, vi phạm và huy hiệu đã được xóa.');
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error resetting data:", error);
-      alert('Có lỗi xảy ra khi làm mới dữ liệu. Vui lòng thử lại.');
+      alert(`Có lỗi xảy ra khi làm mới dữ liệu: ${error?.message || 'Vui lòng thử lại.'}`);
     } finally {
       setIsResetting(false);
     }
