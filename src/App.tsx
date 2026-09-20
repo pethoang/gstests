@@ -18,7 +18,7 @@ import ClassesTab from './components/ClassesTab';
 import StudentDashboard from './components/StudentDashboard';
 import LoginPage from './components/LoginPage';
 import { auth, db } from './lib/firebase';
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, User } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, User } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 
 import OverviewTab from './components/OverviewTab';
@@ -63,6 +63,11 @@ export default function App() {
   const [statsKey, setStatsKey] = useState(0); // For forcing OverviewTab rerender
 
   useEffect(() => {
+    // Process redirect result if returning from signInWithRedirect
+    getRedirectResult(auth).catch((err) => {
+      console.warn('Redirect auth result info:', err);
+    });
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       setIsUnauthorized(false);
@@ -145,7 +150,28 @@ export default function App() {
       const provider = new GoogleAuthProvider();
       // Force account selection to help users switch if needed
       provider.setCustomParameters({ prompt: 'select_account' });
-      await signInWithPopup(auth, provider);
+
+      const ua = navigator.userAgent || '';
+      const isInApp = /zalo|fban|fbav|instagram|line/i.test(ua);
+
+      if (isInApp) {
+        await signInWithRedirect(auth, provider);
+      } else {
+        try {
+          await signInWithPopup(auth, provider);
+        } catch (popupErr: any) {
+          if (
+            popupErr?.code === 'auth/popup-blocked' ||
+            popupErr?.code === 'auth/popup-closed-by-user' ||
+            popupErr?.code === 'auth/cancelled-popup-request'
+          ) {
+            console.warn('Popup blocked, switching to redirect auth...');
+            await signInWithRedirect(auth, provider);
+          } else {
+            throw popupErr;
+          }
+        }
+      }
     } catch (error: any) {
       console.error('Login error:', error);
       alert(`Đăng nhập thất bại: ${error?.message || 'Lỗi không xác định'}`);

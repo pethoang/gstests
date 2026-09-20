@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { doc, getDoc, collection, addDoc, setDoc, query, where, getDocs, updateDoc, increment } from 'firebase/firestore';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, User } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, User } from 'firebase/auth';
 import { Question } from '../types';
 import PreviewTab from './PreviewTab';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -253,12 +253,9 @@ export default function ExamPlayer() {
     };
   }, [hasStarted, isSubmitted, user, examId, teacherId, examTitle, studentName]);
 
-  const handleLogin = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      // Auto register student to users collection
-      if (result.user) {
+  useEffect(() => {
+    getRedirectResult(auth).then(async (result) => {
+      if (result && result.user) {
         const userRef = doc(db, 'users', result.user.uid);
         const userSnap = await getDoc(userRef);
         if (!userSnap.exists()) {
@@ -270,9 +267,52 @@ export default function ExamPlayer() {
           });
         }
       }
+    }).catch((err) => {
+      console.warn('Redirect result error in ExamPlayer:', err);
+    });
+  }, []);
+
+  const handleLogin = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+
+      const ua = navigator.userAgent || '';
+      const isInApp = /zalo|fban|fbav|instagram|line/i.test(ua);
+
+      if (isInApp) {
+        await signInWithRedirect(auth, provider);
+      } else {
+        try {
+          const result = await signInWithPopup(auth, provider);
+          if (result && result.user) {
+            const userRef = doc(db, 'users', result.user.uid);
+            const userSnap = await getDoc(userRef);
+            if (!userSnap.exists()) {
+              await setDoc(userRef, {
+                displayName: result.user.displayName || 'Học sinh',
+                email: result.user.email,
+                role: 'student',
+                createdAt: new Date().toISOString()
+              });
+            }
+          }
+        } catch (popupErr: any) {
+          if (
+            popupErr?.code === 'auth/popup-blocked' ||
+            popupErr?.code === 'auth/popup-closed-by-user' ||
+            popupErr?.code === 'auth/cancelled-popup-request'
+          ) {
+            console.warn('Popup blocked in ExamPlayer, fallback to redirect auth...');
+            await signInWithRedirect(auth, provider);
+          } else {
+            throw popupErr;
+          }
+        }
+      }
     } catch (error: any) {
       console.error('Login error:', error);
-      alert(`Đăng nhập thất bại: ${error?.message || 'Lỗi không xác định'}`);
+      alert(`Đăng nhập thất bại: ${error?.message || 'Vui lòng thử lại.'}`);
     }
   };
 

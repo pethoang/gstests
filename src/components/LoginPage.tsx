@@ -6,6 +6,9 @@ interface LoginPageProps {
 }
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
+  const ua = typeof navigator !== 'undefined' ? (navigator.userAgent || '') : '';
+  const isInApp = /zalo|fban|fbav|instagram|line/i.test(ua);
+
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 md:p-6 font-sans bg-slate-100">
       <div className="w-full max-w-4xl bg-white rounded-xl md:rounded-2xl shadow-xl border border-slate-200/60 flex flex-col md:flex-row overflow-hidden md:min-h-[500px] animate-in fade-in duration-500">
@@ -85,6 +88,15 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                 Tạo đề, tạo lớp học, giao đề<br />cho học sinh
               </h2>
             </div>
+
+            {isInApp && (
+              <div className="mb-5 p-3 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs text-amber-900 leading-relaxed shadow-xs">
+                <p className="font-bold mb-1 text-amber-800 flex items-center gap-1">
+                  💡 Đang mở bằng Zalo / Facebook:
+                </p>
+                Nếu gặp lỗi đăng nhập, bấm dấu <strong>3 chấm (...)</strong> ở góc màn hình &rarr; chọn <strong>"Mở bằng trình duyệt" (Chrome / Safari)</strong> nhé!
+              </div>
+            )}
 
             {/* Login Button */}
             <Button 
