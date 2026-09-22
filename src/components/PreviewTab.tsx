@@ -150,8 +150,19 @@ export default function PreviewTab({
   // Sort questions by order first to ensure PDF sequence
   const sortedQuestions = [...questions].sort((a, b) => a.order - b.order);
   
-  // Group questions by section based on sorted order
-  const sections = Array.from(new Set(sortedQuestions.map(q => q.section)));
+  // Group consecutive questions sharing the same section to preserve exact numerical order
+  const sectionBlocks: { section: string; questions: Question[] }[] = [];
+  sortedQuestions.forEach((q) => {
+    const lastBlock = sectionBlocks[sectionBlocks.length - 1];
+    if (lastBlock && lastBlock.section === q.section) {
+      lastBlock.questions.push(q);
+    } else {
+      sectionBlocks.push({
+        section: q.section,
+        questions: [q],
+      });
+    }
+  });
 
   const handleCopyLink = () => {
     if (publishedLink) {
@@ -247,8 +258,9 @@ export default function PreviewTab({
         </div>
 
       <div className="p-6 sm:p-10 space-y-10">
-        {sections.map((section, sIndex) => {
-          const sectionQuestions = sortedQuestions.filter(q => q.section === section);
+        {sectionBlocks.map((block, sIndex) => {
+          const section = block.section;
+          const sectionQuestions = block.questions;
           
           // Group consecutive questions with same passage and instructions
           const groups: { passage?: string; instructions?: string; audioUrl?: string; questions: Question[] }[] = [];
@@ -514,10 +526,11 @@ export default function PreviewTab({
              </div>
              
              <div className="p-6 overflow-y-auto space-y-6">
-                {sections.map(section => {
-                  const sectionQs = sortedQuestions.filter(q => q.section === section);
-                  return (
-                    <div key={section}>
+                 {sectionBlocks.map((block, bIdx) => {
+                   const section = block.section;
+                   const sectionQs = block.questions;
+                   return (
+                     <div key={`${section}-${bIdx}`}>
                       <h4 className="font-bold text-slate-800 italic mb-3">{section}</h4>
                       <div className="flex flex-wrap gap-2">
                         {sectionQs.map(q => {
