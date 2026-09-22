@@ -8,7 +8,16 @@ export const parsePDF = async (file: File): Promise<Question[]> => {
       try {
         const base64Data = (reader.result as string).split(',')[1];
         
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = process.env.GEMINI_API_KEY || 
+                       process.env.VITE_GEMINI_API_KEY || 
+                       (import.meta as any).env?.VITE_GEMINI_API_KEY || 
+                       (import.meta as any).env?.GEMINI_API_KEY || 
+                       (typeof window !== 'undefined' ? localStorage.getItem('CUSTOM_GEMINI_API_KEY') : '');
+
+        if (!apiKey || !apiKey.trim() || apiKey === 'MY_GEMINI_API_KEY') {
+          throw new Error('Chưa cấu hình GEMINI_API_KEY trên Vercel. Vui lòng thêm biến môi trường GEMINI_API_KEY vào Cài đặt Vercel (Project Settings -> Environment Variables).');
+        }
+
         const ai = new GoogleGenAI({ apiKey });
 
         const prompt = `Bạn là chuyên gia phân tích đề Tiếng Anh tại Việt Nam. Tôi cung cấp cho bạn base64 của một file PDF đề Tiếng Anh.
