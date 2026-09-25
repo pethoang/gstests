@@ -62,8 +62,8 @@ service cloud.firestore {
              (!('allowedEmails' in data) || (data.allowedEmails is list && data.allowedEmails.size() <= 2000)) &&
              (!('startTime' in data) || (data.startTime == null || (data.startTime is string && data.startTime.size() <= 100))) &&
              (!('endTime' in data) || (data.endTime == null || (data.endTime is string && data.endTime.size() <= 100))) &&
-             (!('grade' in data) || (data.grade in ['6', '7', '8', '9'])) &&
-             (!('examType' in data) || (data.examType in ['GK1', 'CK1', 'GK2', 'CK2', 'Unit']));
+             (!('grade' in data) || (data.grade == null || (data.grade is string && data.grade.size() <= 50))) &&
+             (!('examType' in data) || (data.examType == null || (data.examType is string && data.examType.size() <= 50)));
     }
 
     function isValidSubmission(data) {
