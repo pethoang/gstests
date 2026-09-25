@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
-import { Question } from '../types';
+import { Question, CategoryItem } from '../types';
 import { collection, addDoc, doc, updateDoc, getDocs, query, where, getDoc, deleteField } from 'firebase/firestore';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { getDirectGoogleDriveLink } from './PreviewTab';
@@ -28,6 +28,8 @@ interface EditTabProps {
   setGrade?: (val: any) => void;
   examType?: string | null;
   setExamType?: (val: any) => void;
+  grades?: CategoryItem[];
+  examTypes?: CategoryItem[];
   onPublish: (link: string) => void;
 }
 
@@ -55,6 +57,8 @@ export default function EditTab({
   setGrade,
   examType = null,
   setExamType,
+  grades = [],
+  examTypes = [],
   onPublish 
 }: EditTabProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -246,10 +250,18 @@ export default function EditTab({
                 onChange={(e) => setGrade && setGrade(e.target.value || null)}
               >
                 <option value="">Chọn khối lớp...</option>
-                <option value="6">Khối 6</option>
-                <option value="7">Khối 7</option>
-                <option value="8">Khối 8</option>
-                <option value="9">Khối 9</option>
+                {grades && grades.length > 0 ? (
+                  grades.map(g => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))
+                ) : (
+                  <>
+                    <option value="6">Khối 6</option>
+                    <option value="7">Khối 7</option>
+                    <option value="8">Khối 8</option>
+                    <option value="9">Khối 9</option>
+                  </>
+                )}
               </select>
             </div>
             <div className="space-y-2">
@@ -261,11 +273,19 @@ export default function EditTab({
                 onChange={(e) => setExamType && setExamType(e.target.value || null)}
               >
                 <option value="">Chọn loại bài...</option>
-                <option value="GK1">Giữa kì 1 (GK1)</option>
-                <option value="CK1">Cuối kì 1 (CK1)</option>
-                <option value="GK2">Giữa kì 2 (GK2)</option>
-                <option value="CK2">Cuối kì 2 (CK2)</option>
-                <option value="Unit">Test theo Unit</option>
+                {examTypes && examTypes.length > 0 ? (
+                  examTypes.map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))
+                ) : (
+                  <>
+                    <option value="GK1">Giữa kì 1 (GK1)</option>
+                    <option value="CK1">Cuối kì 1 (CK1)</option>
+                    <option value="GK2">Giữa kì 2 (GK2)</option>
+                    <option value="CK2">Cuối kì 2 (CK2)</option>
+                    <option value="Unit">Test theo Unit</option>
+                  </>
+                )}
               </select>
             </div>
           </div>

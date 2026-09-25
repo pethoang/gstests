@@ -4,7 +4,7 @@ import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Button } from './ui/button';
 import { Loader2, Calendar, FileEdit, Users, Trash2, Send, X, Brain } from 'lucide-react';
-import { Question, Grade, ExamType } from '../types';
+import { Question, Grade, ExamType, CategoryItem } from '../types';
 import ResultsTab from './ResultsTab';
 import SmarterAnalyticsTab from './SmarterAnalyticsTab';
 
@@ -40,9 +40,11 @@ interface HistoryTabProps {
     grade?: Grade | null,
     examType?: ExamType | null
   ) => void;
+  grades?: CategoryItem[];
+  examTypes?: CategoryItem[];
 }
 
-export default function HistoryTab({ onEditExam }: HistoryTabProps) {
+export default function HistoryTab({ onEditExam, grades = [], examTypes = [] }: HistoryTabProps) {
   const [exams, setExams] = useState<ExamRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -260,10 +262,18 @@ export default function HistoryTab({ onEditExam }: HistoryTabProps) {
             onChange={(e) => setFilterGrade(e.target.value as any)}
           >
             <option value="all">Tất cả Khối</option>
-            <option value="6">Khối 6</option>
-            <option value="7">Khối 7</option>
-            <option value="8">Khối 8</option>
-            <option value="9">Khối 9</option>
+            {grades && grades.length > 0 ? (
+              grades.map(g => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))
+            ) : (
+              <>
+                <option value="6">Khối 6</option>
+                <option value="7">Khối 7</option>
+                <option value="8">Khối 8</option>
+                <option value="9">Khối 9</option>
+              </>
+            )}
           </select>
           <select 
             className="text-sm border-slate-200 rounded-md p-2 bg-white min-w-[100px]"
@@ -271,11 +281,19 @@ export default function HistoryTab({ onEditExam }: HistoryTabProps) {
             onChange={(e) => setFilterType(e.target.value as any)}
           >
             <option value="all">Tất cả Loại</option>
-            <option value="GK1">Giữa kì 1</option>
-            <option value="CK1">Cuối kì 1</option>
-            <option value="GK2">Giữa kì 2</option>
-            <option value="CK2">Cuối kì 2</option>
-            <option value="Unit">Theo Unit</option>
+            {examTypes && examTypes.length > 0 ? (
+              examTypes.map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))
+            ) : (
+              <>
+                <option value="GK1">Giữa kì 1</option>
+                <option value="CK1">Cuối kì 1</option>
+                <option value="GK2">Giữa kì 2</option>
+                <option value="CK2">Cuối kì 2</option>
+                <option value="Unit">Theo Unit</option>
+              </>
+            )}
           </select>
         </div>
       </div>
@@ -310,12 +328,12 @@ export default function HistoryTab({ onEditExam }: HistoryTabProps) {
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       {exam.grade && (
                         <span className="bg-indigo-100 text-indigo-700 text-[10px] uppercase font-bold px-1.5 py-0.5 rounded">
-                          Khối {exam.grade}
+                          {grades.find(g => g.id === exam.grade)?.name || (exam.grade.length <= 2 && !isNaN(Number(exam.grade)) ? `Khối ${exam.grade}` : exam.grade)}
                         </span>
                       )}
                       {exam.examType && (
                         <span className="bg-emerald-100 text-emerald-700 text-[10px] uppercase font-bold px-1.5 py-0.5 rounded">
-                          {exam.examType === 'Unit' ? 'Test Unit' : exam.examType}
+                          {examTypes.find(t => t.id === exam.examType)?.name || (exam.examType === 'Unit' ? 'Test Unit' : exam.examType)}
                         </span>
                       )}
                       <h3 className="text-lg font-bold text-slate-900 truncate">{exam.title}</h3>

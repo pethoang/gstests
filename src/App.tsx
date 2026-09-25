@@ -4,10 +4,10 @@
  */
 
 import { useState, useEffect } from 'react';
-import { FileUp, FileText, Edit3, Eye, Users, FileType, CheckCircle, Library, LogIn, Menu, X, LayoutDashboard, ShieldAlert, RefreshCcw, AlertTriangle, GraduationCap, Sparkles, Brain } from 'lucide-react';
+import { FileUp, FileText, Edit3, Eye, Users, FileType, CheckCircle, Library, LogIn, Menu, X, LayoutDashboard, ShieldAlert, RefreshCcw, AlertTriangle, GraduationCap, Sparkles, Brain, Tags } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Button } from './components/ui/button';
-import { Question, Grade, ExamType } from './types';
+import { Question, Grade, ExamType, CategoryItem } from './types';
 import UploadTab from './components/UploadTab';
 import AnalysisTab from './components/AnalysisTab';
 import EditTab from './components/EditTab';
@@ -15,6 +15,7 @@ import PreviewTab from './components/PreviewTab';
 import GuidelinesTab from './components/GuidelinesTab';
 import HistoryTab from './components/HistoryTab';
 import ClassesTab from './components/ClassesTab';
+import CategoriesTab, { DEFAULT_GRADES, DEFAULT_EXAM_TYPES } from './components/CategoriesTab';
 import StudentDashboard from './components/StudentDashboard';
 import LoginPage from './components/LoginPage';
 import { auth, db } from './lib/firebase';
@@ -26,7 +27,7 @@ import ViolationsTab from './components/ViolationsTab';
 import BadgesTab from './components/BadgesTab';
 import SupportModal from './components/SupportModal';
 
-type TabType = 'overview' | 'upload' | 'analysis' | 'edit' | 'preview' | 'results' | 'guidelines' | 'history' | 'classes' | 'violations' | 'badges';
+type TabType = 'overview' | 'upload' | 'analysis' | 'edit' | 'preview' | 'results' | 'guidelines' | 'history' | 'classes' | 'categories' | 'violations' | 'badges';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -55,6 +56,30 @@ export default function App() {
   const [currentEndTime, setCurrentEndTime] = useState<string | null>(null);
   const [currentGrade, setCurrentGrade] = useState<Grade | null>(null);
   const [currentExamType, setCurrentExamType] = useState<ExamType | null>(null);
+
+  // Categories State
+  const [grades, setGrades] = useState<CategoryItem[]>(DEFAULT_GRADES);
+  const [examTypes, setExamTypes] = useState<CategoryItem[]>(DEFAULT_EXAM_TYPES);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const catDoc = await getDoc(doc(db, 'categories', 'examCategories'));
+        if (catDoc.exists()) {
+          const data = catDoc.data();
+          if (data.grades && Array.isArray(data.grades) && data.grades.length > 0) {
+            setGrades(data.grades);
+          }
+          if (data.examTypes && Array.isArray(data.examTypes) && data.examTypes.length > 0) {
+            setExamTypes(data.examTypes);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   // Reset data state
   const [isResetting, setIsResetting] = useState(false);
@@ -308,6 +333,7 @@ export default function App() {
     { id: 'upload', icon: FileUp, label: 'Tải đề' },
     { id: 'history', icon: Library, label: 'Kho đề thi' },
     { id: 'classes', icon: Users, label: 'Học sinh & Lớp học' },
+    { id: 'categories', icon: Tags, label: 'Danh mục Đề thi' },
     { id: 'violations', icon: ShieldAlert, label: 'Vi phạm' },
     { id: 'badges', icon: Sparkles, label: 'Quản lý huy hiệu' },
     { id: 'analysis', icon: FileText, label: 'Kết quả phân tích', disabled: !hasAnalyzed },
@@ -473,7 +499,7 @@ export default function App() {
         )}>
           <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2 no-scrollbar">
             <div className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] mb-3 px-3 mt-2">Quản lý</div>
-            {navItems.filter(i => ['overview', 'upload', 'history', 'classes', 'violations', 'badges', 'guidelines'].includes(i.id)).map((item) => (
+            {navItems.filter(i => ['overview', 'upload', 'history', 'classes', 'categories', 'violations', 'badges', 'guidelines'].includes(i.id)).map((item) => (
               <button
                 key={item.id}
                 onClick={() => {
@@ -565,7 +591,14 @@ export default function App() {
               {activeTab === 'overview' && <OverviewTab key={statsKey} />}
               {activeTab === 'upload' && <UploadTab onAnalyzed={handleAnalyzed} />}
               {activeTab === 'classes' && <ClassesTab />}
-              {activeTab === 'history' && <HistoryTab onEditExam={handleEditExistingExam} />}
+              {activeTab === 'categories' && (
+                <CategoriesTab 
+                  grades={grades} 
+                  examTypes={examTypes} 
+                  onUpdateCategories={(newG, newT) => { setGrades(newG); setExamTypes(newT); }} 
+                />
+              )}
+              {activeTab === 'history' && <HistoryTab onEditExam={handleEditExistingExam} grades={grades} examTypes={examTypes} />}
               {activeTab === 'violations' && <ViolationsTab />}
               {activeTab === 'badges' && <BadgesTab />}
               {activeTab === 'analysis' && <AnalysisTab questions={questions} onNext={() => setActiveTab('edit')} />}
@@ -587,6 +620,8 @@ export default function App() {
                 setGrade={setCurrentGrade}
                 examType={currentExamType}
                 setExamType={setCurrentExamType}
+                grades={grades}
+                examTypes={examTypes}
                 onPublish={(link) => { 
                   setIsTestPublished(true); 
                   setPublishedLink(link);

@@ -29,8 +29,13 @@ export interface Question {
   isManualGrading?: boolean;
 }
 
-export type Grade = '6' | '7' | '8' | '9';
-export type ExamType = 'GK1' | 'CK1' | 'GK2' | 'CK2' | 'Unit';
+export type Grade = string;
+export type ExamType = string;
+
+export interface CategoryItem {
+  id: string;
+  name: string;
+}
 
 export interface TestData {
   id: string;
