@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Search, Filter, Download, UserCircle, CheckCircle, XCircle, Loader2, ArrowLeft, Sparkles } from 'lucide-react';
+import { Search, Filter, Download, UserCircle, CheckCircle, XCircle, Loader2, ArrowLeft, Sparkles, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, doc, getDoc } from 'firebase/firestore';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import * as XLSX from 'xlsx';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Question } from '../types';
+import PreviewTab from './PreviewTab';
 
 interface ResultsTabProps {
   examId: string | null;
@@ -39,6 +41,25 @@ export default function ResultsTab({ examId, onBack }: ResultsTabProps) {
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+
+  useEffect(() => {
+    if (!examId) return;
+    const fetchExamDoc = async () => {
+      try {
+        const examRef = doc(db, 'exams', examId);
+        const examSnap = await getDoc(examRef);
+        if (examSnap.exists()) {
+          setQuestions(examSnap.data().questions || []);
+        }
+      } catch (err) {
+        console.error("Error fetching exam questions:", err);
+      }
+    };
+    fetchExamDoc();
+  }, [examId]);
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -378,7 +399,14 @@ export default function ResultsTab({ examId, onBack }: ResultsTabProps) {
                     <Badge variant="success">Đã tự động chấm</Badge>
                   </td>
                   <td className="px-6 py-4">
-                    <Button variant="ghost" size="sm" className="text-blue-600 font-medium">Xem chi tiết</Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-blue-600 font-medium hover:bg-blue-50"
+                      onClick={() => setSelectedSubmission(sub)}
+                    >
+                      Xem chi tiết
+                    </Button>
                   </td>
                 </tr>
               );
@@ -435,6 +463,51 @@ export default function ResultsTab({ examId, onBack }: ResultsTabProps) {
           )}
         </div>
       </Card>
+
+      {/* Detail Submission Modal */}
+      {selectedSubmission && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
+              <div>
+                <div className="flex items-center gap-3">
+                  <h3 className="font-bold text-slate-900 text-lg">Bài làm chi tiết: {selectedSubmission.studentName}</h3>
+                  <span className="bg-green-100 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full border border-green-200">
+                    Điểm: {selectedSubmission.score.toFixed(2)} / {selectedSubmission.maxScore}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Email: {selectedSubmission.studentEmail || 'Không có'} • Nộp lúc: {new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(selectedSubmission.submittedAt))}
+                </p>
+              </div>
+              <button 
+                onClick={() => setSelectedSubmission(null)}
+                className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 bg-slate-50/50">
+              <PreviewTab 
+                questions={questions}
+                initialAnswers={selectedSubmission.answers}
+                showCorrectAnswers={true}
+                isStudentView={true}
+              />
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-100 flex justify-end bg-white shrink-0">
+              <Button onClick={() => setSelectedSubmission(null)} variant="outline">
+                Đóng
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
