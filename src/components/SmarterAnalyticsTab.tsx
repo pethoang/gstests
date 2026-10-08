@@ -23,6 +23,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from 'recharts';
+import { checkIsCorrect } from '../types';
 
 interface Question {
   id: string;
@@ -256,7 +257,7 @@ export default function SmarterAnalyticsTab({ examId, onBack }: SmarterAnalytics
 
       subs.forEach(sub => {
         const studentAns = sub.answers[q.id];
-        const isCorrect = studentAns !== undefined && String(studentAns).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase();
+        const isCorrect = checkIsCorrect(q as any, studentAns);
 
         if (isCorrect) {
           correct++;

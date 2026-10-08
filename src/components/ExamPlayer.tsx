@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { doc, getDoc, collection, addDoc, setDoc, query, where, getDocs, updateDoc, increment } from 'firebase/firestore';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, User } from 'firebase/auth';
-import { Question } from '../types';
+import { Question, checkIsCorrect } from '../types';
 import PreviewTab from './PreviewTab';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
@@ -327,7 +327,7 @@ export default function ExamPlayer() {
     
     questions.forEach(q => {
       maxScore += q.points;
-      if (answers[q.id] && String(answers[q.id]) === String(q.correctAnswer)) {
+      if (checkIsCorrect(q, answers[q.id])) {
         totalScore += q.points;
       }
     });

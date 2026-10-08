@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Question } from '../types';
+import { Question, checkIsCorrect } from '../types';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Copy, CheckCircle, Loader2, LayoutGrid, X, Clock } from 'lucide-react';
@@ -110,16 +110,18 @@ export default function PreviewTab({
           letter: ['A', 'B', 'C', 'D'][i] || String.fromCharCode(65 + i)
         }));
         
-        // Fisher-Yates shuffle
-        for (let i = optionsWithLetters.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [optionsWithLetters[i], optionsWithLetters[j]] = [optionsWithLetters[j], optionsWithLetters[i]];
+        // Shuffle ONLY during live test taking, NOT in review mode
+        if (isStudentView && !showCorrectAnswers) {
+          for (let i = optionsWithLetters.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [optionsWithLetters[i], optionsWithLetters[j]] = [optionsWithLetters[j], optionsWithLetters[i]];
+          }
         }
         map[q.id] = optionsWithLetters;
       }
     });
     return map;
-  }, [questions]);
+  }, [questions, isStudentView, showCorrectAnswers]);
 
   useEffect(() => {
     if (timeLeft === null || timeLeft <= 0 || isSubmitting || showCorrectAnswers) return;
@@ -355,7 +357,7 @@ export default function PreviewTab({
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               {(shuffledOptionsMap[q.id] || []).map(({ opt, letter }, i) => {
                                 const isSelected = answers[q.id] === letter;
-                                const isCorrect = String(q.correctAnswer) === letter;
+                                const isCorrect = checkIsCorrect(q, letter);
                                 
                                 let borderClass = 'border-slate-200 hover:border-blue-300 hover:bg-slate-50';
                                 if (showCorrectAnswers) {
@@ -396,7 +398,7 @@ export default function PreviewTab({
                               {['True', 'False'].map((label) => {
                                 const val = label === 'True';
                                 const isSelected = answers[q.id] === val;
-                                const isCorrect = q.correctAnswer === val || String(q.correctAnswer).toLowerCase() === label.toLowerCase();
+                                const isCorrect = checkIsCorrect(q, val);
                                 
                                 let borderClass = 'border-slate-200 hover:border-blue-300 hover:bg-slate-50';
                                 if (showCorrectAnswers) {
@@ -428,14 +430,14 @@ export default function PreviewTab({
                             <div>
                               <Input 
                                 placeholder="Your answer..." 
-                                className={`w-full sm:max-w-md bg-white transition-shadow focus-visible:ring-blue-500 ${showCorrectAnswers ? (String(answers[q.id] || '').trim().toLowerCase() === String(q.correctAnswer || '').trim().toLowerCase() ? 'border-green-500 text-green-700 focus-visible:ring-green-500' : 'border-red-500 text-red-700 focus-visible:ring-red-500') : ''}`}
+                                className={`w-full sm:max-w-md bg-white transition-shadow focus-visible:ring-blue-500 ${showCorrectAnswers ? (checkIsCorrect(q, answers[q.id]) ? 'border-green-500 text-green-700 focus-visible:ring-green-500' : 'border-red-500 text-red-700 focus-visible:ring-red-500') : ''}`}
                                 onChange={(e) => !showCorrectAnswers && setAnswers({...answers, [q.id]: e.target.value})}
                                 value={answers[q.id] as string || ''}
                                 readOnly={showCorrectAnswers}
                               />
-                              {showCorrectAnswers && String(answers[q.id] || '').trim().toLowerCase() !== String(q.correctAnswer || '').trim().toLowerCase() && (
+                              {showCorrectAnswers && !checkIsCorrect(q, answers[q.id]) && (
                                 <div className="mt-2 text-sm text-green-600 font-medium">
-                                  Đáp án đúng: {String(q.correctAnswer)}
+                                  Đáp án đúng: {Array.isArray(q.correctAnswer) ? q.correctAnswer.join(' / ') : String(q.correctAnswer || '')}
                                 </div>
                               )}
                             </div>
@@ -445,14 +447,14 @@ export default function PreviewTab({
                             <div>
                               <Input 
                                 placeholder="Type your answer here..." 
-                                className={`w-full bg-white transition-shadow focus-visible:ring-blue-500 ${showCorrectAnswers ? (String(answers[q.id] || '').trim().toLowerCase() === String(q.correctAnswer || '').trim().toLowerCase() ? 'border-green-500 text-green-700 focus-visible:ring-green-500' : 'border-red-500 text-red-700 focus-visible:ring-red-500') : ''}`}
+                                className={`w-full bg-white transition-shadow focus-visible:ring-blue-500 ${showCorrectAnswers ? (checkIsCorrect(q, answers[q.id]) ? 'border-green-500 text-green-700 focus-visible:ring-green-500' : 'border-red-500 text-red-700 focus-visible:ring-red-500') : ''}`}
                                 onChange={(e) => !showCorrectAnswers && setAnswers({...answers, [q.id]: e.target.value})}
                                 value={answers[q.id] as string || ''}
                                 readOnly={showCorrectAnswers}
                               />
-                              {showCorrectAnswers && String(answers[q.id] || '').trim().toLowerCase() !== String(q.correctAnswer || '').trim().toLowerCase() && (
+                              {showCorrectAnswers && !checkIsCorrect(q, answers[q.id]) && (
                                 <div className="mt-2 text-sm text-green-600 font-medium">
-                                  Đáp án đúng: {String(q.correctAnswer)}
+                                  Đáp án đúng: {Array.isArray(q.correctAnswer) ? q.correctAnswer.join(' / ') : String(q.correctAnswer || '')}
                                 </div>
                               )}
                             </div>
