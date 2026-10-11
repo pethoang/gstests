@@ -127,8 +127,8 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
             {/* Footer */}
             <div className="mt-8 pt-4 border-t border-slate-100 flex flex-col items-center gap-1.5">
-              <div className="text-slate-400 text-xs font-semibold tracking-wide uppercase">
-                Một sản phẩm của @globalsuccessfiles.com
+              <div className="text-slate-400 text-xs font-semibold tracking-wide">
+                Một sản phẩm của Mr Hoàng - 0913.885.221
               </div>
             </div>
           </div>
